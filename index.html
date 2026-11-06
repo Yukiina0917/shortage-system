@@ -1,107 +1,2500 @@
-<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>一吉晟訂單缺件比對工具</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#203047;font:15px system-ui,'Microsoft JhengHei',sans-serif}header{background:#16354b;color:white;padding:24px 5%}main{max-width:1250px;margin:auto;padding:24px}h1{margin:0;font-size:26px}h2{font-size:20px}section{background:white;border:1px solid #dde4ec;border-radius:12px;padding:22px;margin-bottom:20px}button,.file{background:#147d80;color:white;border:0;border-radius:6px;padding:10px 15px;cursor:pointer;margin:4px}button.secondary{background:#53667b}input,select,textarea{padding:9px;border:1px solid #bdc9d6;border-radius:5px;font:inherit;max-width:100%}textarea{width:100%;min-height:100px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{text-align:left;border-bottom:1px solid #e4e9ef;padding:10px;vertical-align:top}th{background:#f1f6f9}small,.muted{color:#64758a}.warn{background:#fff4d9;padding:13px;border-radius:6px}.red{color:#b43c33;font-weight:bold}.scroll{overflow:auto}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}#notice{position:sticky;top:0;background:#e1f2ee;padding:12px;display:none;z-index:2}summary{cursor:pointer;font-weight:bold}.pill{font-size:12px;background:#e4f0f3;padding:3px 6px;border-radius:4px}label{display:inline-block;margin:5px}td input[type=number]{width:95px}footer{padding:15px;color:#64758a}@media(max-width:650px){main{padding:10px}section{padding:12px}td,th{padding:7px}}
+<!doctype html>
+<!--
+  一吉晟訂單缺件比對工具 — 程式碼導覽
+  以使用者上傳的 index (2).html 為基礎，保留標題、文字及手機排版修改。
+  搜尋「雲端網址設定」可修改預填資料庫網址。
+  搜尋「自動連線啟動」可找到開啟網頁自動讀取的入口。
+  其他區塊：版面樣式、商品與庫存、訂單解析、缺件報表計算、備份及匯出。
+  自動連線僅讀取資料，不會建立或覆蓋雲端庫存。
+-->
+<html lang="zh-Hant">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>一吉晟訂單缺件比對工具</title>
 
-body{background:#edf2f7}header{padding:20px 28px}header p{margin-bottom:0}main{max-width:1600px;margin:0 auto;padding:24px 28px 24px 245px}.sidebar{position:absolute;left:24px;top:155px;width:195px;display:grid;gap:9px}.sidebar button{text-align:left;background:white;color:#203047;border:1px solid #d6e0eb;padding:15px}.sidebar button.active{background:#16354b;color:white}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0 0 22px}.cards button{text-align:left;background:white;color:#203047;border:1px solid #d6e0eb;border-radius:12px;padding:20px;margin:0}.cards strong{display:block;font-size:18px;margin-bottom:7px}.cards span{color:#64758a;font-size:13px}.panel[hidden]{display:none}section{box-shadow:0 3px 12px #16354b06}button:disabled{opacity:.45;cursor:not-allowed}.danger{background:#b43c33}#logs button{white-space:nowrap}#viewTitle{margin-top:0}.sidebar small{padding:12px}@media(max-width:1000px){main{padding:18px}.sidebar{position:static;width:auto;display:flex;flex-wrap:wrap;padding:12px 18px}.sidebar button{padding:10px}.sidebar small{display:none}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){header{padding:18px}.cards{gap:8px}.cards button{padding:12px}h1{font-size:22px}}
+  <!-- [版面樣式：桌面與手機] -->
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #f3f6fa;
+      color: #203047;
+      font:
+        15px system-ui,
+        "Microsoft JhengHei",
+        sans-serif;
+    }
+    header {
+      background: #16354b;
+      color: white;
+      padding: 24px 5%;
+    }
+    main {
+      max-width: 1250px;
+      margin: auto;
+      padding: 24px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+    h2 {
+      font-size: 20px;
+    }
+    section {
+      background: white;
+      border: 1px solid #dde4ec;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+    button,
+    .file {
+      background: #147d80;
+      color: white;
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 15px;
+      cursor: pointer;
+      margin: 4px;
+    }
+    button.secondary {
+      background: #53667b;
+    }
+    input,
+    select,
+    textarea {
+      padding: 9px;
+      border: 1px solid #bdc9d6;
+      border-radius: 5px;
+      font: inherit;
+      max-width: 100%;
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+    }
+    th,
+    td {
+      text-align: left;
+      border-bottom: 1px solid #e4e9ef;
+      padding: 10px;
+      vertical-align: top;
+    }
+    th {
+      background: #f1f6f9;
+    }
+    small,
+    .muted {
+      color: #64758a;
+    }
+    .warn {
+      background: #fff4d9;
+      padding: 13px;
+      border-radius: 6px;
+    }
+    .red {
+      color: #b43c33;
+      font-weight: bold;
+    }
+    .scroll {
+      overflow: auto;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #notice {
+      position: sticky;
+      top: 0;
+      background: #e1f2ee;
+      padding: 12px;
+      display: none;
+      z-index: 2;
+    }
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .pill {
+      font-size: 12px;
+      background: #e4f0f3;
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+    label {
+      display: inline-block;
+      margin: 5px;
+    }
+    td input[type="number"] {
+      width: 95px;
+    }
+    footer {
+      padding: 15px;
+      color: #64758a;
+    }
+    @media (max-width: 650px) {
+      main {
+        padding: 10px;
+      }
+      section {
+        padding: 12px;
+      }
+      td,
+      th {
+        padding: 7px;
+      }
+    }
 
-header{position:sticky;top:0;z-index:5;min-height:130px;padding-right:390px}.sidebar{position:fixed;top:130px;bottom:0;left:0;width:220px;padding:25px 18px;background:#edf2f7;overflow-y:auto;align-content:start;z-index:4}#lastCompare{position:absolute;right:28px;top:24px;max-width:350px;text-align:right;font-size:14px;line-height:1.8;color:#d9e9f3}dialog{border:0;border-radius:12px;padding:25px;max-width:min(600px,92vw);box-shadow:0 20px 80px #0005}dialog::backdrop{background:#10263a88}#dialogBody{white-space:pre-wrap;line-height:1.8;max-height:60vh;overflow:auto}dialog h2{margin-top:0}@media(max-width:1000px){header{min-height:0;padding-right:20px;position:relative}#lastCompare{position:static;text-align:left;max-width:none;margin-top:12px}.sidebar{position:sticky;top:0;width:auto;bottom:auto;padding:8px;overflow:auto;flex-wrap:nowrap;background:#edf2f7}.sidebar button{white-space:nowrap;flex-shrink:0}}
+    body {
+      background: #edf2f7;
+    }
+    header {
+      padding: 20px 28px;
+    }
+    header p {
+      margin-bottom: 0;
+    }
+    main {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px 28px 24px 245px;
+    }
+    .sidebar {
+      position: absolute;
+      left: 24px;
+      top: 155px;
+      width: 195px;
+      display: grid;
+      gap: 9px;
+    }
+    .sidebar button {
+      text-align: left;
+      background: white;
+      color: #203047;
+      border: 1px solid #d6e0eb;
+      padding: 15px;
+    }
+    .sidebar button.active {
+      background: #16354b;
+      color: white;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 0 0 22px;
+    }
+    .cards button {
+      text-align: left;
+      background: white;
+      color: #203047;
+      border: 1px solid #d6e0eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 0;
+    }
+    .cards strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 7px;
+    }
+    .cards span {
+      color: #64758a;
+      font-size: 13px;
+    }
+    .panel[hidden] {
+      display: none;
+    }
+    section {
+      box-shadow: 0 3px 12px #16354b06;
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .danger {
+      background: #b43c33;
+    }
+    #logs button {
+      white-space: nowrap;
+    }
+    #viewTitle {
+      margin-top: 0;
+    }
+    .sidebar small {
+      padding: 12px;
+    }
+    @media (max-width: 1000px) {
+      main {
+        padding: 18px;
+      }
+      .sidebar {
+        position: static;
+        width: auto;
+        display: flex;
+        flex-wrap: wrap;
+        padding: 12px 18px;
+      }
+      .sidebar button {
+        padding: 10px;
+      }
+      .sidebar small {
+        display: none;
+      }
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 550px) {
+      header {
+        padding: 18px;
+      }
+      .cards {
+        gap: 8px;
+      }
+      .cards button {
+        padding: 12px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+    }
 
-.banner-tools{position:absolute;right:28px;top:14px;max-width:390px;text-align:right}#lastCompare{position:static;max-width:none;font-size:13px}.banner-tools button{padding:7px 14px;margin:6px 0}.banner-tools>small{display:block;max-width:390px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#c2dade;font-size:11px}.settings-cloud{padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid #e1e8ee}#productDialog{width:760px;max-width:94vw;max-height:85vh;overflow-y:auto}#productDialog h3{border-top:1px solid #dce6ee;padding-top:18px}#products td{vertical-align:middle}#products td:first-child{min-width:230px}#products td:last-child{min-width:330px}.stock-badge{background:#e9edf2;padding:3px 7px;border-radius:5px;font-size:12px}.report-hero{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(120deg,#15364b,#147d80);color:white;border-radius:12px;padding:25px 28px;gap:20px}.eyebrow{font-size:12px;letter-spacing:2px;opacity:.8}.report-hero h3{font-size:28px;margin:7px 0}.report-hero p{margin:0;color:#d4e7eb;font-size:13px}.report-count{text-align:center;min-width:120px}.report-count strong{font-size:44px;display:block;line-height:1.1}.report-count span{font-size:12px}.report-summary{display:flex;justify-content:space-between;gap:12px;padding:18px 5px;color:#62748a;font-size:13px}.report-summary b{color:#203047;margin-left:8px}.shortage-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.shortage-item{display:flex;align-items:center;gap:14px;border:1px solid #e2e7ec;background:#fff;border-radius:10px;padding:18px}.item-number{color:#9aa9b6;font-size:12px}.shortage-name{flex:1}.shortage-name strong{display:block}.shortage-name small{display:inline-block;color:#b34c35;background:#fff0e9;border-radius:4px;padding:3px 7px;margin-top:7px;font-size:11px}.shortage-qty{font-size:30px;font-weight:700;color:#b34c35;white-space:nowrap}.shortage-qty small{font-size:13px;font-weight:400;margin-left:5px;color:#6a7c90}.report-empty{text-align:center;padding:45px 15px;background:#f4faf8;border:1px dashed #bdddd3;border-radius:10px}.report-empty strong{color:#237d68;font-size:20px}.report-empty p{color:#6a7c90}@media(max-width:1000px){.banner-tools{position:static;text-align:left;margin-top:10px}.banner-tools>small{max-width:100%}#lastCompare{margin:0}.shortage-list{grid-template-columns:1fr}}@media(max-width:550px){.report-hero{padding:18px}.report-hero h3{font-size:22px}.report-summary{flex-direction:column}.shortage-item{padding:12px}}
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      min-height: 130px;
+      padding-right: 390px;
+    }
+    .sidebar {
+      position: fixed;
+      top: 130px;
+      bottom: 0;
+      left: 0;
+      width: 220px;
+      padding: 25px 18px;
+      background: #edf2f7;
+      overflow-y: auto;
+      align-content: start;
+      z-index: 4;
+    }
+    #lastCompare {
+      position: absolute;
+      right: 28px;
+      top: 24px;
+      max-width: 350px;
+      text-align: right;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #d9e9f3;
+    }
+    dialog {
+      border: 0;
+      border-radius: 12px;
+      padding: 25px;
+      max-width: min(600px, 92vw);
+      box-shadow: 0 20px 80px #0005;
+    }
+    dialog::backdrop {
+      background: #10263a88;
+    }
+    #dialogBody {
+      white-space: pre-wrap;
+      line-height: 1.8;
+      max-height: 60vh;
+      overflow: auto;
+    }
+    dialog h2 {
+      margin-top: 0;
+    }
+    @media (max-width: 1000px) {
+      header {
+        min-height: 0;
+        padding-right: 20px;
+        position: relative;
+      }
+      #lastCompare {
+        position: static;
+        text-align: left;
+        max-width: none;
+        margin-top: 12px;
+      }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        width: auto;
+        bottom: auto;
+        padding: 8px;
+        overflow: auto;
+        flex-wrap: nowrap;
+        background: #edf2f7;
+      }
+      .sidebar button {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+    }
 
-/* Phone layout: bottom navigation, single-column controls and labelled cards. */
-@media(max-width:760px){
- html{scroll-padding-top:12px}body{font-size:15px}header{padding:18px 16px;position:static;min-height:0}h1{font-size:21px;line-height:1.5;overflow-wrap:anywhere}h1 .pill{display:inline-block;font-size:11px}header>p{font-size:12px;line-height:1.6;margin-top:8px}.banner-tools{position:static;text-align:left;max-width:none;margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}#lastCompare{width:100%;font-size:12px;line-height:1.7;margin:0}.banner-tools button{margin:0;min-height:44px}.banner-tools>small{max-width:100%;width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.6}
- .sidebar{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:7px 5px calc(7px + env(safe-area-inset-bottom));border-top:1px solid #cbd8e3;background:#f8fbff;box-shadow:0 -4px 20px #15364b14;z-index:10;overflow:visible}.sidebar button{font-size:12px;text-align:center;white-space:normal;line-height:1.4;margin:0;padding:8px 2px;min-width:0;min-height:50px;border-radius:8px}.sidebar small{display:none}
- main{width:100%;min-width:0;margin:0;padding:16px 12px calc(95px + env(safe-area-inset-bottom))}section{padding:16px 12px;border-radius:10px;margin-bottom:14px;min-width:0}h2{font-size:19px;margin-top:8px}h3{font-size:17px}p{line-height:1.7;overflow-wrap:anywhere}button{min-height:44px;line-height:1.5;max-width:100%;white-space:normal}input,select,textarea{font-size:16px;min-height:44px;min-width:0}input[type=checkbox]{min-height:auto;width:20px;height:20px;vertical-align:middle}input[type=file]{width:100%;padding:8px;font-size:13px}input[type=date]{width:100%;min-width:0}input::file-selector-button{min-height:36px}#databaseURL{width:100%!important}#search{width:100%;margin:12px 0}label{max-width:100%;margin:5px 0}textarea{min-height:135px}.row{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.row>label{display:grid;grid-template-columns:70px minmax(0,1fr);align-items:center;gap:8px}.row>button{width:100%;margin:0}.row>input{width:100%}#panel_orders>p{font-size:13px}#reportDay{width:auto;max-width:100%;margin-left:5px}#notice{position:static;line-height:1.7;overflow-wrap:anywhere;border-radius:7px;margin-bottom:12px}.warn{font-size:13px;line-height:1.7}
- .scroll{overflow:visible;max-width:100%}table{display:block;width:100%;margin:10px 0}thead{display:none}tbody{display:grid;gap:12px;width:100%}tr{display:block;border:1px solid #dce6ed;border-radius:10px;background:#fff;padding:8px 12px;width:100%;min-width:0}td{display:block;border:0;padding:7px 0;width:100%;min-width:0!important;overflow-wrap:anywhere}td::before{content:attr(data-label);display:block;color:#6b7e91;font-size:12px;font-weight:600;margin-bottom:5px}#products td:first-child{font-size:16px;font-weight:600}#products td:last-child{display:flex;gap:7px;flex-wrap:wrap}#products td:last-child::before{width:100%}#products td:last-child button{flex:1 1 90px;margin:0;padding:8px 10px;font-size:13px}#products td input[type=number]{width:100%;flex-basis:100%}#products select{width:100%}td select{width:100%}td button{margin-left:0}#products td:first-child button{font-size:12px;font-weight:400}
- dialog,#productDialog{width:calc(100% - 24px);max-width:600px;max-height:85vh;max-height:85dvh;padding:18px 14px;overflow-y:auto;overscroll-behavior:contain}#productDialog .row{display:flex;justify-content:space-between}#productDialog .row>button{width:auto}#productDialog h2{font-size:18px;margin:0}#newName,#newUnit{width:100%;margin-bottom:8px}#addProduct,#bulkPreview,#bulkApply{width:100%;margin:5px 0}#dialogBody{max-height:55vh;font-size:14px}.report-hero{padding:20px 16px;gap:12px;align-items:center}.report-hero h3{font-size:23px}.report-hero p{font-size:12px}.report-count{min-width:80px}.report-count strong{font-size:36px}.report-summary{flex-direction:column;gap:7px;padding:14px 0}.shortage-list{grid-template-columns:1fr}.shortage-item{gap:10px;padding:15px 12px}.shortage-name{min-width:0;overflow-wrap:anywhere}.shortage-name strong{font-size:15px}.shortage-qty{font-size:28px}.item-number{font-size:11px}.report-empty{padding:30px 14px}footer{font-size:12px;padding:10px 0}
-}
-</style><header><h1>一吉晟訂單缺件比對工具 <span class="pill" style="color:#16354b">雲端測試版 v2.2</span></h1><p>匯入預覽 → 確認商品 → 套用扣庫存 → 匯報缺件</p><div class="banner-tools"><div id="lastCompare">最後比對接單日：尚無紀錄</div><button id="bannerRefresh">更新雲端資料</button><small id="bannerStatus">尚未連線</small></div></header><nav class="sidebar" aria-label="功能選單"><button id="nav_orders" class="active" data-view="orders">訂單比對</button><button id="nav_report" data-view="report">缺件報表</button><button id="nav_inventory" data-view="inventory">商品與庫存</button><button id="nav_history" data-view="history">操作紀錄</button><button id="nav_settings" data-view="settings">備份與設定</button><small>雲端共用<br>建議每日下載備份</small></nav><main><h2 id="viewTitle">訂單比對</h2><div id="notice" role="status"></div>
-<section id="panel_settings" class="panel" hidden><div class="settings-cloud"><h2>雲端連線</h2><p id="cloudStatus">尚未連線，無法修改資料。</p><input id="databaseURL" placeholder="Firebase Realtime Database網址" style="width:65%"><button id="connectCloud">連線／更新雲端資料</button><button id="initializeCloud" disabled>建立雲端初始資料</button><p class="muted">雲端連線網址請回填<br>https://egctool-001-default-rtdb.firebaseio.com</p></div><div class="warn">首次使用請先核對商品狀態與庫存。預載列管狀態尚待你確認；缺件按所選備貨日統計，不累加前日欠件。數量基準為11/6更新後，請勿將先前已扣過的訂單重新入帳。未建立對照的商品必須確認，才可套用。</div><p>新版開始記錄比對接單日與時間；舊版紀錄不會回推。內容相似度以訂單識別、接單日、備貨日、品名數量及溫層計算，達90%即提醒。備貨日仍用於篩選當日需求。</p><p>資料共用於Firebase，請定期下載備份。換電腦後輸入相同資料庫網址並連線，即可讀取共用資料。</p><button id="backup">下載完整備份</button><label>還原備份 <input type="file" id="restore" accept=".json"></label><button id="undo" class="secondary">撤回最後一次操作</button></section>
-<section id="panel_inventory" class="panel" hidden><div id="inventoryPanel"><h2>商品與庫存</h2><p class="muted">「設定剩餘」直接覆蓋現有數量；「增加進貨」加到現有數量。庫存充足不計數，缺貨列管則從0開始計算。每日缺件當日補齊；多買的剩餘量請在此登記。</p><button id="openProductDialog">＋ 新增商品／批次設定剩餘量</button><label><input type="checkbox" id="showArchived"> 顯示已封存商品</label><input id="search" placeholder="搜尋商品或別名"><div id="products" class="scroll"></div></div></section>
-<section id="panel_orders" class="panel"><h2>匯入訂單並預覽</h2><p>支援 UTF-8／Big5 的 TXT（Tab分隔）及CSV。Excel請先另存CSV UTF-8。標題需有「訂單編號、品名、接單日、備貨日」；可含「序號、接單管道、溫層」。沒有序號的同單多列須先補上穩定且唯一的序號。</p><div class="row"><input type="file" id="ordersFile" accept=".txt,.csv,.tsv"><label>編碼 <select id="encoding"><option value="utf-8">UTF-8</option><option value="big5">Big5</option></select></label><label>備貨日 <input id="day" type="date"></label><button id="preview">分析預覽</button><button id="refreshPreview" class="secondary">重新檢查目前預覽</button><button id="addUnknown" class="secondary" disabled>將未建檔商品設為庫存充足</button><button id="commit" disabled>確認套用本次訂單</button></div><details><summary>或貼上含標題的訂單表格</summary><textarea id="orderText" placeholder="從Excel複製含標題的資料貼到這裡"></textarea></details><div id="previewResult"></div><div id="commitReason" class="warn">請先分析訂單。</div></section>
-<section id="panel_report" class="panel" hidden><h2>當日需補貨</h2><label>報表備貨日 <input id="reportDay" type="date"></label><button id="exportReport">匯出CSV</button><div id="report" class="scroll"></div><details><summary>訂單入帳明細</summary><div id="entries" class="scroll"></div></details></section>
-<section id="panel_history" class="panel" hidden><h2>操作紀錄</h2><p>多人共用版保留操作歷程，不提供整批回溯刪除。測試資料請放獨立Firebase測試專案，避免影響正式共用資料。</p><div id="logs"></div></section><footer>需連線使用・訂單資料存於Firebase・包裝數字不等於訂購數量</footer></main>
-<dialog id="productDialog" aria-labelledby="productDialogTitle"><div class="row" style="justify-content:space-between"><h2 id="productDialogTitle">新增商品與批次庫存</h2><button id="closeProductDialog" class="secondary">關閉</button></div><h3>新增商品</h3><p><input id="newName" placeholder="商品正式名稱"> <input id="newUnit" placeholder="單位，例如箱" size="10"><button id="addProduct">新增（待確認）</button></p><h3>批次設定剩餘量</h3><p class="muted">輸入目前實際剩餘量，會覆蓋原庫存，不是增加進貨。</p><textarea id="bulk" placeholder="總匯點心包x11&#10;五木拉麵x4"></textarea><button id="bulkPreview">預覽批次更新</button><div id="bulkResult"></div></dialog><dialog id="compareDialog" aria-labelledby="dialogTitle"><h2 id="dialogTitle"></h2><p id="dialogBody"></p><div class="row"><button id="dialogYes">是</button><button id="dialogNo" class="secondary">我再想想</button></div></dialog><script>
-'use strict';
-const $=id=>document.getElementById(id), KEY='shortage-tool-v1', modes={pending:'待確認',ample:'庫存充足',count:'按數量追蹤',out:'缺貨列管'};
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const norm=s=>String(s).normalize('NFKC').toLowerCase().replace(/[\s()（）\[\]【】]/g,'');
-const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Taipei'}).format(new Date());
-const seed=[['萬歲牌總匯點心包','盒',11,'總匯點心包|(萬歲牌)總匯點心包(盒)'],['五木快煮拉麵','箱',4,'五木拉麵|(五木)快煮拉麵(箱)'],['桂格減糖黑十穀','盒',1,'黑十穀|減糖黑十穀|(桂格)減糖黑十穀(盒)'],['舒酸定長效抗敏牙膏進階亮白','組',5,'舒酸定牙膏|(舒酸定)長效抗敏牙膏(進階亮白)(4入/組)'],['翠果子航空米果綜合禮盒','盒',7,'航空米果|(翠果子)航空米果綜合禮盒(盒)'],['IRIS飯','件',4,'IRIS飯'],['北海青花椒鱈魚香絲','包',0,'(北海)青花椒鱈魚香絲(包)'],['義美減糖糙米奶','箱',0,'糙米奶|(義美)減糖糙米奶(箱)'],['Pokka Sapporo極品脆粒玉米濃湯','箱',0,'Sapporo|(Pokka Sapporo)極品脆粒玉米濃湯(15罐/箱)'],['義美皇家夾心酥','盒',0,'皇家夾心酥'],['西雅圖極品嚴焙大濾掛咖啡','盒',0,'西雅圖咖啡'],['Juver蘋果汁','箱',0,'Juver 蘋果汁'],['美祿','箱',0,'美祿'],['康寶金黃玉米濃湯','盒',null,'康寶玉米濃湯'],['康寶港式酸辣濃湯','盒',null,'康寶酸辣濃湯'],['品客MINI原味','盒',null,'品客mini'],['豐力富紐西蘭頂級純濃奶粉','罐',null,'豐力富奶粉']];
-function initial(){return {version:1,products:seed.map((p,i)=>({id:'p'+i,name:p[0],unit:p[1],stock:p[2]??0,mode:p[2]===null?'ample':p[2]>0?'count':'out',aliases:[p[0],...p[3].split('|')]})),entries:[],logs:[],comparisons:[],undo:[]};}
-let state=initial(),preview=null,bulkChanges=null;
-function validate(s){if(s?.version!==1||!Array.isArray(s.products)||!Array.isArray(s.entries)||!Array.isArray(s.logs))throw Error('備份格式不符');const ids=new Set();for(const p of s.products){if(!p.id||ids.has(p.id)||!p.name||!p.unit||!modes[p.mode]||!Number.isSafeInteger(p.stock)||p.stock<0||!Array.isArray(p.aliases)||p.aliases.some(a=>typeof a!=='string'))throw Error('商品資料不合法');ids.add(p.id);}const keys=new Set();for(const e of s.entries){if(!e.key||keys.has(e.key)||!e.fingerprint||!e.day||!Array.isArray(e.items))throw Error('訂單資料不合法');keys.add(e.key);for(const i of e.items)if(!ids.has(i.id)||!Number.isSafeInteger(i.qty)||i.qty<=0||!Number.isSafeInteger(i.short)||i.short<0||i.short>i.qty||!Number.isSafeInteger(i.resolved)||i.resolved<0||i.resolved>i.short)throw Error('訂單數量不合法');}if(s.comparisons!==undefined&&(!Array.isArray(s.comparisons)||s.comparisons.some(c=>!Array.isArray(c.days)||c.days.some(d=>typeof d!=='string')||!Array.isArray(c.tokens)||c.tokens.some(t=>typeof t!=='string')||!Number.isFinite(Date.parse(c.at)))))throw Error('比對歷史格式不符');return s;}
-let cloudURL='',cloudTag=null,cloudReady=false,cloudBusy=false,cloudExists=false;
-try{$('databaseURL').value=localStorage.getItem('shortage-cloud-url')||'';}catch(e){}
-function cloudStatus(t){$('cloudStatus').textContent=t;$('bannerStatus').textContent=t;}
-function endpoint(raw){const u=new URL(raw);if(u.protocol!=='https:'||!/(^|\.)(firebaseio\.com|firebasedatabase\.app)$/.test(u.hostname)||u.pathname!=='/'||u.search||u.hash)throw Error('請填資料庫根網址，例如 https://專案-default-rtdb.asia-southeast1.firebasedatabase.app');return u.origin+'/shortage/shared.json';}
-async function cloudGet(){const r=await fetch(cloudURL,{headers:{'X-Firebase-ETag':'true'},cache:'no-store'});if(!r.ok)throw Error('讀取失敗 HTTP '+r.status+'，請檢查網址與資料庫規則');const tag=r.headers.get('ETag');if(!tag)throw Error('無法取得雲端版本，已停止寫入');return {tag,data:await r.json()};}
-function decodeCloud(data){if(!data||data.schema!==1||typeof data.payload!=='string'||!Number.isSafeInteger(data.revision))throw Error('雲端資料格式不符');return validate(JSON.parse(data.payload));}
-function invalidatePreview(){preview=null;bulkChanges=null;$('commit').disabled=true;$('addUnknown').disabled=true;$('previewResult').textContent='資料已更新，請重新分析訂單。';$('commitReason').textContent='請重新分析訂單。';$('bulkResult').textContent='';}
-async function connectCloud(){if(cloudBusy)return;cloudBusy=true;cloudReady=false;try{cloudURL=endpoint($('databaseURL').value.trim());const remote=await cloudGet();cloudTag=remote.tag;cloudExists=remote.data!==null;if(cloudExists){state=decodeCloud(remote.data);cloudReady=true;invalidatePreview();render();cloudStatus('已連線｜雲端版本 '+remote.data.revision+'｜更新時間 '+formatCompareTime(remote.data.updatedAt));}else cloudStatus('雲端尚無資料，請按「建立雲端初始資料」。');$('initializeCloud').disabled=cloudExists;try{localStorage.setItem('shortage-cloud-url',$('databaseURL').value.trim());}catch(e){}}catch(e){cloudStatus(e.message);}finally{cloudBusy=false;}}
-async function putCloud(candidate,tag,revision){const payload=JSON.stringify({...candidate,undo:[]});if(new TextEncoder().encode(payload).length>4000000)throw Error('雲端資料超過測試版4MB上限，請備份並聯絡修改分表版本');const envelope={schema:1,revision,payload,updatedAt:new Date().toISOString()};const r=await fetch(cloudURL,{method:'PUT',headers:{'Content-Type':'application/json','if-match':tag,'X-Firebase-ETag':'true'},body:JSON.stringify(envelope)});if(r.status===412)throw Error('其他人已更新資料，本次未寫入。請更新雲端資料並重新操作');if(!r.ok)throw Error('儲存失敗 HTTP '+r.status);return envelope;}
-$('connectCloud').onclick=connectCloud;$('bannerRefresh').onclick=connectCloud;
-$('openProductDialog').onclick=()=>$('productDialog').showModal();$('closeProductDialog').onclick=()=>$('productDialog').close();$('showArchived').onchange=render;
-$('initializeCloud').onclick=async()=>{if(cloudBusy||cloudExists||!cloudTag)return;if(!confirm('將建立預載商品資料。庫存尚需核對；你也可以建立後還原正式JSON備份。確定建立？'))return;cloudBusy=true;try{const e=await putCloud(initial(),cloudTag,1);cloudExists=true;cloudStatus('已建立雲端起始資料');}catch(e){cloudStatus(e.message);}finally{cloudBusy=false;await connectCloud();}};
-function notify(s){$('notice').textContent=s;$('notice').style.display='block';}
-async function mutate(label,fn){if(!cloudReady||cloudBusy){notify('請先連線雲端，或等待上次操作完成');throw Error('雲端尚未就緒');}cloudBusy=true;const old=JSON.stringify(state);document.querySelector('main').inert=true;try{const remote=await cloudGet();if(remote.tag!==cloudTag){cloudReady=false;throw Error('雲端已有其他更新。請按「連線／更新雲端資料」，重新確認後再操作');}fn();state.logs.push({at:new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}),label});state.undo=[];validate(state);const candidate=JSON.parse(JSON.stringify(state));state=JSON.parse(old);const e=await putCloud(candidate,remote.tag,(remote.data?.revision||0)+1);state=candidate;cloudReady=false;invalidatePreview();render();cloudStatus('已儲存｜雲端版本 '+e.revision+'｜'+formatCompareTime(e.updatedAt));notify(label+'，已儲存至雲端。');return true;}catch(e){state=JSON.parse(old);cloudReady=false;cloudStatus('尚未確認同步：'+e.message);notify('操作未確認成功：'+e.message+'。請重新連線確認最新資料，勿直接重複送出。');throw e;}finally{cloudBusy=false;document.querySelector('main').inert=false;if(!cloudReady)await connectCloud();}}
-function product(id){return state.products.find(p=>p.id===id);}
-function match(name){const n=norm(name);return state.products.filter(p=>!p.archived&&p.aliases.some(a=>norm(a)===n));}
-function validQty(v,zero=true){if(String(v).trim()===''||!/^\d+$/.test(String(v).trim()))throw Error('請輸入整數數量');const n=Number(v);if(!Number.isSafeInteger(n)||n<(zero?0:1))throw Error('數量不合法');return n;}
-function table(headers,rows){return '<table><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((c,i)=>'<td data-label="'+esc(headers[i]||'')+'">'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>';}
-function render(){const q=norm($('search').value);$('products').innerHTML=table(['商品／別名','狀態','目前可用','更新操作'],state.products.filter(p=>(!p.archived||$('showArchived').checked)&&norm(p.name+p.aliases.join()).includes(q)).map(p=>[esc(p.name)+(p.archived?' <span class="stock-badge">已封存</span>':'')+'<br><small>'+esc(p.unit)+'</small><br><button class="secondary" data-alias="'+esc(p.id)+'">編輯別名</button>','<select data-mode="'+esc(p.id)+'">'+Object.entries(modes).map(([k,v])=>'<option value="'+k+'" '+(p.mode===k?'selected':'')+'>'+v+'</option>').join('')+'</select>',p.mode==='ample'?'充足，未清點':p.mode==='pending'?'待確認':esc(p.stock)+' '+esc(p.unit),'<input type="number" min="0" step="1" id="qty_'+p.id+'" placeholder="數量"><button data-set="'+p.id+'">設定剩餘</button><button class="secondary" data-add="'+p.id+'">增加進貨</button><button class="danger" data-remove="'+p.id+'">刪除</button>'+(p.archived?'<button class="secondary" data-unarchive="'+p.id+'">恢復</button>':'')]));$('logs').innerHTML=table(['時間','操作內容','刪除與還原'],state.logs.map((l,i)=>[esc(l.at),esc(l.label),i>=state.logs.length-(state.undo||[]).length?'<button class="danger" data-delete-log="'+i+'">刪除紀錄並還原資料</button>':'<small>雲端歷程保留</small>']).reverse());renderReport();renderLastCompare();}
-$('search').oninput=render;
+    .banner-tools {
+      position: absolute;
+      right: 28px;
+      top: 14px;
+      max-width: 390px;
+      text-align: right;
+    }
+    #lastCompare {
+      position: static;
+      max-width: none;
+      font-size: 13px;
+    }
+    .banner-tools button {
+      padding: 7px 14px;
+      margin: 6px 0;
+    }
+    .banner-tools > small {
+      display: block;
+      max-width: 390px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #c2dade;
+      font-size: 11px;
+    }
+    .settings-cloud {
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #e1e8ee;
+    }
+    #productDialog {
+      width: 760px;
+      max-width: 94vw;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    #productDialog h3 {
+      border-top: 1px solid #dce6ee;
+      padding-top: 18px;
+    }
+    #products td {
+      vertical-align: middle;
+    }
+    #products td:first-child {
+      min-width: 230px;
+    }
+    #products td:last-child {
+      min-width: 330px;
+    }
+    .stock-badge {
+      background: #e9edf2;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+    .report-hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(120deg, #15364b, #147d80);
+      color: white;
+      border-radius: 12px;
+      padding: 25px 28px;
+      gap: 20px;
+    }
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 2px;
+      opacity: 0.8;
+    }
+    .report-hero h3 {
+      font-size: 28px;
+      margin: 7px 0;
+    }
+    .report-hero p {
+      margin: 0;
+      color: #d4e7eb;
+      font-size: 13px;
+    }
+    .report-count {
+      text-align: center;
+      min-width: 120px;
+    }
+    .report-count strong {
+      font-size: 44px;
+      display: block;
+      line-height: 1.1;
+    }
+    .report-count span {
+      font-size: 12px;
+    }
+    .report-summary {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 5px;
+      color: #62748a;
+      font-size: 13px;
+    }
+    .report-summary b {
+      color: #203047;
+      margin-left: 8px;
+    }
+    .shortage-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .shortage-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid #e2e7ec;
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .item-number {
+      color: #9aa9b6;
+      font-size: 12px;
+    }
+    .shortage-name {
+      flex: 1;
+    }
+    .shortage-name strong {
+      display: block;
+    }
+    .shortage-name small {
+      display: inline-block;
+      color: #b34c35;
+      background: #fff0e9;
+      border-radius: 4px;
+      padding: 3px 7px;
+      margin-top: 7px;
+      font-size: 11px;
+    }
+    .shortage-qty {
+      font-size: 30px;
+      font-weight: 700;
+      color: #b34c35;
+      white-space: nowrap;
+    }
+    .shortage-qty small {
+      font-size: 13px;
+      font-weight: 400;
+      margin-left: 5px;
+      color: #6a7c90;
+    }
+    .report-empty {
+      text-align: center;
+      padding: 45px 15px;
+      background: #f4faf8;
+      border: 1px dashed #bdddd3;
+      border-radius: 10px;
+    }
+    .report-empty strong {
+      color: #237d68;
+      font-size: 20px;
+    }
+    .report-empty p {
+      color: #6a7c90;
+    }
+    @media (max-width: 1000px) {
+      .banner-tools {
+        position: static;
+        text-align: left;
+        margin-top: 10px;
+      }
+      .banner-tools > small {
+        max-width: 100%;
+      }
+      #lastCompare {
+        margin: 0;
+      }
+      .shortage-list {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 550px) {
+      .report-hero {
+        padding: 18px;
+      }
+      .report-hero h3 {
+        font-size: 22px;
+      }
+      .report-summary {
+        flex-direction: column;
+      }
+      .shortage-item {
+        padding: 12px;
+      }
+    }
 
-async function removeProduct(id){const p=product(id);if(!p)return;const linked=state.entries.some(e=>e.items.some(x=>x.id===id));if(linked){if(!confirm('此商品已有訂單紀錄，將改為封存並從一般清單隱藏，歷史報表會保留。\n商品：'+p.name+'\n目前庫存：'+p.stock+p.unit+'\n確定封存？'))return;await mutate('封存商品 '+p.name,()=>p.archived=true);}else{if(!confirm('確定刪除「'+p.name+'」？\n目前庫存：'+p.stock+p.unit+'\n商品、庫存及名稱對照將一併刪除。'))return;await mutate('刪除商品 '+p.name,()=>{state.products=state.products.filter(x=>x.id!==id);});}}
+    /* Phone layout: bottom navigation, single-column controls and labelled cards. */
+    @media (max-width: 760px) {
+      html {
+        scroll-padding-top: 12px;
+      }
+      body {
+        font-size: 15px;
+      }
+      header {
+        padding: 18px 16px;
+        position: static;
+        min-height: 0;
+      }
+      h1 {
+        font-size: 21px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+      h1 .pill {
+        display: inline-block;
+        font-size: 11px;
+      }
+      header > p {
+        font-size: 12px;
+        line-height: 1.6;
+        margin-top: 8px;
+      }
+      .banner-tools {
+        position: static;
+        text-align: left;
+        max-width: none;
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+      #lastCompare {
+        width: 100%;
+        font-size: 12px;
+        line-height: 1.7;
+        margin: 0;
+      }
+      .banner-tools button {
+        margin: 0;
+        min-height: 44px;
+      }
+      .banner-tools > small {
+        max-width: 100%;
+        width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.6;
+      }
+      .sidebar {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 3px;
+        padding: 7px 5px calc(7px + env(safe-area-inset-bottom));
+        border-top: 1px solid #cbd8e3;
+        background: #f8fbff;
+        box-shadow: 0 -4px 20px #15364b14;
+        z-index: 10;
+        overflow: visible;
+      }
+      .sidebar button {
+        font-size: 12px;
+        text-align: center;
+        white-space: normal;
+        line-height: 1.4;
+        margin: 0;
+        padding: 8px 2px;
+        min-width: 0;
+        min-height: 50px;
+        border-radius: 8px;
+      }
+      .sidebar small {
+        display: none;
+      }
+      main {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        padding: 16px 12px calc(95px + env(safe-area-inset-bottom));
+      }
+      section {
+        padding: 16px 12px;
+        border-radius: 10px;
+        margin-bottom: 14px;
+        min-width: 0;
+      }
+      h2 {
+        font-size: 19px;
+        margin-top: 8px;
+      }
+      h3 {
+        font-size: 17px;
+      }
+      p {
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+      }
+      button {
+        min-height: 44px;
+        line-height: 1.5;
+        max-width: 100%;
+        white-space: normal;
+      }
+      input,
+      select,
+      textarea {
+        font-size: 16px;
+        min-height: 44px;
+        min-width: 0;
+      }
+      input[type="checkbox"] {
+        min-height: auto;
+        width: 20px;
+        height: 20px;
+        vertical-align: middle;
+      }
+      input[type="file"] {
+        width: 100%;
+        padding: 8px;
+        font-size: 13px;
+      }
+      input[type="date"] {
+        width: 100%;
+        min-width: 0;
+      }
+      input::file-selector-button {
+        min-height: 36px;
+      }
+      #databaseURL {
+        width: 100% !important;
+      }
+      #search {
+        width: 100%;
+        margin: 12px 0;
+      }
+      label {
+        max-width: 100%;
+        margin: 5px 0;
+      }
+      textarea {
+        min-height: 135px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+      }
+      .row > label {
+        display: grid;
+        grid-template-columns: 70px minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+      }
+      .row > button {
+        width: 100%;
+        margin: 0;
+      }
+      .row > input {
+        width: 100%;
+      }
+      #panel_orders > p {
+        font-size: 13px;
+      }
+      #reportDay {
+        width: auto;
+        max-width: 100%;
+        margin-left: 5px;
+      }
+      #notice {
+        position: static;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+        border-radius: 7px;
+        margin-bottom: 12px;
+      }
+      .warn {
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .scroll {
+        overflow: visible;
+        max-width: 100%;
+      }
+      table {
+        display: block;
+        width: 100%;
+        margin: 10px 0;
+      }
+      thead {
+        display: none;
+      }
+      tbody {
+        display: grid;
+        gap: 12px;
+        width: 100%;
+      }
+      tr {
+        display: block;
+        border: 1px solid #dce6ed;
+        border-radius: 10px;
+        background: #fff;
+        padding: 8px 12px;
+        width: 100%;
+        min-width: 0;
+      }
+      td {
+        display: block;
+        border: 0;
+        padding: 7px 0;
+        width: 100%;
+        min-width: 0 !important;
+        overflow-wrap: anywhere;
+      }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        color: #6b7e91;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+      #products td:first-child {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      #products td:last-child {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      #products td:last-child::before {
+        width: 100%;
+      }
+      #products td:last-child button {
+        flex: 1 1 90px;
+        margin: 0;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+      #products td input[type="number"] {
+        width: 100%;
+        flex-basis: 100%;
+      }
+      #products select {
+        width: 100%;
+      }
+      td select {
+        width: 100%;
+      }
+      td button {
+        margin-left: 0;
+      }
+      #products td:first-child button {
+        font-size: 12px;
+        font-weight: 400;
+      }
+      dialog,
+      #productDialog {
+        width: calc(100% - 24px);
+        max-width: 600px;
+        max-height: 85vh;
+        max-height: 85dvh;
+        padding: 18px 14px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      #productDialog .row {
+        display: flex;
+        justify-content: space-between;
+      }
+      #productDialog .row > button {
+        width: auto;
+      }
+      #productDialog h2 {
+        font-size: 18px;
+        margin: 0;
+      }
+      #newName,
+      #newUnit {
+        width: 100%;
+        margin-bottom: 8px;
+      }
+      #addProduct,
+      #bulkPreview,
+      #bulkApply {
+        width: 100%;
+        margin: 5px 0;
+      }
+      #dialogBody {
+        max-height: 55vh;
+        font-size: 14px;
+      }
+      .report-hero {
+        padding: 20px 16px;
+        gap: 12px;
+        align-items: center;
+      }
+      .report-hero h3 {
+        font-size: 23px;
+      }
+      .report-hero p {
+        font-size: 12px;
+      }
+      .report-count {
+        min-width: 80px;
+      }
+      .report-count strong {
+        font-size: 36px;
+      }
+      .report-summary {
+        flex-direction: column;
+        gap: 7px;
+        padding: 14px 0;
+      }
+      .shortage-list {
+        grid-template-columns: 1fr;
+      }
+      .shortage-item {
+        gap: 10px;
+        padding: 15px 12px;
+      }
+      .shortage-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .shortage-name strong {
+        font-size: 15px;
+      }
+      .shortage-qty {
+        font-size: 28px;
+      }
+      .item-number {
+        font-size: 11px;
+      }
+      .report-empty {
+        padding: 30px 14px;
+      }
+      footer {
+        font-size: 12px;
+        padding: 10px 0;
+      }
+    }
+  </style>
+  <!-- [Banner與功能導覽] -->
+  <header>
+    <h1>
+      一吉晟訂單缺件比對工具
+      <span class="pill" style="color: #16354b">雲端測試版 v2.3</span>
+    </h1>
+    <p>匯入預覽 → 確認商品 → 套用扣庫存 → 匯報缺件</p>
+    <div class="banner-tools">
+      <div id="lastCompare">最後比對接單日：尚無紀錄</div>
+      <button id="bannerRefresh">更新雲端資料</button
+      ><small id="bannerStatus">尚未連線</small>
+    </div>
+  </header>
+  <nav class="sidebar" aria-label="功能選單">
+    <button id="nav_orders" class="active" data-view="orders">訂單比對</button
+    ><button id="nav_report" data-view="report">缺件報表</button
+    ><button id="nav_inventory" data-view="inventory">商品與庫存</button
+    ><button id="nav_history" data-view="history">操作紀錄</button
+    ><button id="nav_settings" data-view="settings">備份與設定</button
+    ><small>雲端共用<br />建議每日下載備份</small>
+  </nav>
+  <main>
+    <h2 id="viewTitle">訂單比對</h2>
+    <div id="notice" role="status"></div>
 
-$('products').onclick=async e=>{const t=e.target,id=t.dataset.alias||t.dataset.set||t.dataset.add||t.dataset.remove||t.dataset.unarchive;if(!id)return;const p=product(id);try{if(t.dataset.remove){await removeProduct(id);return;}if(t.dataset.unarchive){await mutate('恢復商品 '+p.name,()=>p.archived=false);return;}if(t.dataset.alias){const a=prompt('別名一行一個，需保留規格；完整名稱精確對照。',p.aliases.join('\n'));if(a===null)return;const aliases=[...new Set([p.name,...a.split('\n').map(x=>x.trim()).filter(Boolean)])];if(state.products.some(x=>x.id!==id&&x.aliases.some(a=>aliases.some(b=>norm(a)===norm(b)))))throw Error('別名已被其他商品使用');await mutate('更新 '+p.name+' 別名',()=>p.aliases=aliases);}else{const n=validQty($('qty_'+id).value);if(t.dataset.add&&['ample','pending'].includes(p.mode))throw Error('請先設定目前剩餘量，再登記進貨');await mutate((t.dataset.set?'設定剩餘 ':'增加進貨 ')+p.name+' '+n+p.unit,()=>{p.stock=t.dataset.set?n:p.stock+n;if(!Number.isSafeInteger(p.stock))throw Error('數量過大');p.mode=p.stock?'count':'out';});}}catch(e){notify(e.message);}};
-$('products').onchange=async e=>{const id=e.target.dataset.mode;if(!id)return;const p=product(id),m=e.target.value;if(m==='count'&&p.mode==='ample'){notify('請用「設定剩餘」輸入實際庫存量');render();return;}await mutate('變更 '+p.name+' 為 '+modes[m],()=>{p.mode=m;if(m!=='count')p.stock=0;});};
-$('addProduct').onclick=async()=>{const name=$('newName').value.trim(),unit=$('newUnit').value.trim();if(!name||!unit)return notify('請填商品名稱與單位');if(state.products.some(p=>p.aliases.some(a=>norm(a)===norm(name))))return notify('商品或別名已存在（含封存商品），請搜尋並恢復原商品');await mutate('新增商品 '+name,()=>state.products.push({id:'p'+Date.now(),name,unit,stock:0,mode:'pending',aliases:[name]}));};
-$('bulkPreview').onclick=()=>{try{const seen=new Set();bulkChanges=$('bulk').value.trim().split('\n').map(line=>{const a=parseItem(line);const m=match(a.name);if(m.length!==1)throw Error(line+'：找不到唯一商品對照');if(seen.has(m[0].id))throw Error('同商品重複，請合併後輸入');seen.add(m[0].id);return {id:m[0].id,qty:a.qty};});$('bulkResult').innerHTML=table(['商品','原庫存','新庫存'],bulkChanges.map(x=>[esc(product(x.id).name),esc(product(x.id).stock),esc(x.qty)]))+'<button id="bulkApply">確認設定剩餘量</button>';$('bulkApply').onclick=async()=>{await mutate('批次設定剩餘量',()=>bulkChanges.forEach(x=>{const p=product(x.id);p.stock=x.qty;p.mode=x.qty?'count':'out';}));$('bulkResult').textContent='已更新';};}catch(e){notify(e.message);}};
-function parseDelimited(text,delimiter){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else if(quoted||cell==='')quoted=!quoted;else cell+=c;}else if(c===delimiter&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell='';}else cell+=c;}if(quoted)throw Error('引號未閉合');row.push(cell);if(row.some(v=>v.trim()))rows.push(row);return rows;}
-function splitItems(text){let depth=0,parts=[],s='';for(const c of text){if('([（【'.includes(c))depth++;if(')]）】'.includes(c))depth=Math.max(0,depth-1);if(',，、;；\n'.includes(c)&&depth===0){if(s.trim())parts.push(s.trim());s='';}else s+=c;}if(s.trim())parts.push(s.trim());return parts;}
-function parseItem(raw){const s=raw.normalize('NFKC').trim();const m=s.match(/^(.*?)\s*[xX×*＊]\s*(\d+)\s*$/);if(!m||!m[1].trim())throw Error('缺少明確的結尾x數量：'+raw);return {name:m[1].trim(),qty:validQty(m[2],false)};}
-function dateNorm(s){const m=String(s).trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);if(!m)return '';return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');}
-function parseOrders(text,day){const rows=parseDelimited(text.replace(/^\uFEFF/,''),text.includes('\t')?'\t':',');if(rows.length<2)throw Error('沒有可解析的訂單');const h=rows.shift().map(x=>x.trim());const idx=k=>h.indexOf(k);for(const k of ['訂單編號','品名','備貨日'])if(idx(k)<0)throw Error('缺少欄位：'+k);if(h.some(x=>/^(訂購數量|數量|商品數量)$/.test(x)))throw Error('偵測到獨立數量欄。此版本請先整理為品名內x數量，並移除獨立數量欄，避免重複乘算');let excluded=0;const errors=[],orders=[],seen=new Set();rows.forEach((r,i)=>{const d=dateNorm(r[idx('備貨日')]);if(!d){errors.push('資料列'+(i+1)+'：備貨日格式無法辨識');return;}if(d!==day){excluded++;return;}const order=r[idx('訂單編號')]?.trim(),raw=r[idx('品名')]?.trim(),platform=idx('接單管道')>=0?r[idx('接單管道')].trim():'';const serial=idx('序號')>=0?r[idx('序號')].trim():'';const key=JSON.stringify([platform,order,serial]);try{if(!order||!raw)throw Error('缺訂單編號或品名');if(seen.has(key))throw Error('同一訂單列重複，需唯一序號');seen.add(key);if(idx('備註')>=0&&/取消|作廢/.test(r[idx('備註')]||''))throw Error('疑似取消訂單，請先從來源確認並移除');const fingerprint=JSON.stringify([d,raw,r[idx('溫層')]||'']);const existing=state.entries.find(e=>e.key===key);if(existing){if(existing.fingerprint!==fingerprint)throw Error('已入帳訂單有異動，請先確認原紀錄，禁止再次扣庫存');orders.push({key,duplicate:true,order,raw});return;}const items=splitItems(raw).map(parseItem);if(!items.length)throw Error('無品項');orders.push({key,fingerprint,day:d,order,raw,temp:idx('溫層')>=0?r[idx('溫層')]:'未註明',items:items.map(x=>({...x,matches:match(x.name)}))});}catch(e){errors.push('訂單 '+(order||i+1)+'：'+e.message);}});return {orders,errors,excluded};}
-function modal(title,body,question=false){return new Promise(resolve=>{const d=$('compareDialog');$('dialogTitle').textContent=title;$('dialogBody').textContent=body;$('dialogYes').textContent=question?'是':'知道了';$('dialogNo').hidden=!question;const finish=result=>{d.close();resolve(result);};$('dialogYes').onclick=()=>finish(true);$('dialogNo').onclick=()=>finish(false);d.oncancel=e=>{e.preventDefault();finish(false);};d.showModal();});}
-function formatCompareTime(at){return new Date(at).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false});}
-function renderLastCompare(){const last=(state.comparisons||[]).at(-1);$('lastCompare').textContent=last?'最後比對接單日：'+last.days.join('、')+'\n比對時間：'+formatCompareTime(last.at):'最後比對接單日：尚無紀錄';$('lastCompare').style.whiteSpace='pre-line';}
-function sourceMetadata(text){const rows=parseDelimited(text.replace(/^\uFEFF/,''),text.includes('\t')?'\t':',');const h=rows.shift()?.map(x=>x.trim())||[],ix=h.indexOf('接單日');if(ix<0)throw Error('缺少「接單日」欄位，無法記錄與檢查接單日，請補上後匯入');const tokens=[],days=new Set();for(const r of rows){const day=dateNorm(r[ix]);if(!day)throw Error('有訂單的「接單日」空白或格式無法辨識，請使用YYYY/MM/DD');days.add(day);tokens.push(JSON.stringify(['接單日','訂單編號','接單管道','序號','備貨日','品名','溫層'].map(k=>{const v=r[h.indexOf(k)]||'';return k==='接單日'||k==='備貨日'?dateNorm(v):v.normalize('NFKC').trim();})));}if(!tokens.length)throw Error('檔案沒有訂單');return {days:[...days].sort(),tokens:tokens.sort()};}
-function contentSimilarity(a,b){const count=new Map();for(const t of a)count.set(t,(count.get(t)||0)+1);let overlap=0;for(const t of b)if(count.get(t)>0){overlap++;count.set(t,count.get(t)-1);}return a.length+b.length?2*overlap/(a.length+b.length):0;}
-let analyzing=false;
-$('preview').onclick=async()=>{if(analyzing)return;analyzing=true;$('preview').disabled=true;try{let text=$('orderText').value.trim();const f=$('ordersFile').files[0];if(f)text=new TextDecoder($('encoding').value,{fatal:true}).decode(await f.arrayBuffer());if(!text)throw Error('請選檔案或貼上訂單');const meta=sourceMetadata(text),history=state.comparisons||[];const sameDays=meta.days.filter(day=>history.some(c=>c.days.includes(day)));if(sameDays.length){const yes=await modal('接單日已有比對紀錄',sameDays.join('、')+' 的訂單檔案已匯入進行過比對，是否仍要繼續？\n\n選擇「是」後，系統將檢查檔案內容；已入帳的相同訂單仍會自動略過。',true);if(!yes)return;}
-const similar=history.map(c=>({c,score:contentSimilarity(meta.tokens,c.tokens)})).filter(x=>x.score>=0.9).sort((a,b)=>b.score-a.score||b.c.at.localeCompare(a.c.at))[0];if(similar)await modal(similar.score===1?'此檔案已進行過比對':'此檔案與先前比對內容高度相似','內容相似度：'+Math.round(similar.score*100)+'%\n先前比對時間：'+formatCompareTime(similar.c.at)+'\n先前檔案：'+similar.c.name+'\n\n將顯示比對預覽；已入帳訂單不會再次扣除庫存。');
-preview=parseOrders(text,$('day').value);renderPreview();if(!preview.errors.length){const kept=preview;await mutate('完成訂單比對｜接單日 '+meta.days.join('、'),()=>{state.comparisons??=[];state.comparisons.push({...meta,at:new Date().toISOString(),name:f?f.name:'貼上訂單資料'});});preview=kept;renderPreview();}
-}catch(e){preview=null;$('commit').disabled=true;$('commitReason').textContent='分析失敗：'+e.message;notify('分析失敗：'+e.message);}finally{analyzing=false;$('preview').disabled=false;}};
-function tempKey(t){t=String(t??'').trim();return t==='1'||t==='常溫'?'1':t==='3'||t==='冷凍'?'3':t==='2'||t==='冷藏'?'2':'unknown';}
-function aggregatePreview(p){const groups=new Map(),day=$('day').value;function add(id,name,unit,temp,qty,fresh,ref){const key=JSON.stringify([tempKey(temp),id||norm(name)]);if(!groups.has(key))groups.set(key,{id,name,unit,temp:tempKey(temp),total:0,fresh:0,ref});const g=groups.get(key);g.total+=qty;if(fresh)g.fresh+=qty;if(ref)g.ref=ref;}
-for(const e of state.entries)if(e.day===day)for(const x of e.items){const q=product(x.id);add(q.id,q.name,q.unit,e.temp,x.qty,false,null);}
-p.orders.forEach((o,oi)=>{if(o.duplicate)return;o.items.forEach((x,xi)=>{const q=x.matches.length===1?product(x.matches[0].id):null;add(q?.id,q?.name||x.name,q?.unit||'待確認',o.temp,x.qty,true,{oi,xi,raw:x.name});});});return [...groups.values()];}
-function renderPreview(){const p=preview;let unresolved=0;for(const o of p.orders)if(!o.duplicate)for(const x of o.items)if(x.matches.length!==1||product(x.matches[0].id).mode==='pending')unresolved++;
-$('commit').disabled=!!(p.errors.length||unresolved||!p.orders.some(o=>!o.duplicate));const reasons=[];if(p.errors.length)reasons.push('有 '+p.errors.length+' 筆資料錯誤，請修正來源後重新分析');if(unresolved)reasons.push('有 '+unresolved+' 個品項尚未對照，或商品狀態為待確認');if(!p.orders.some(o=>!o.duplicate))reasons.push('沒有可新增的訂單，請確認備貨日；已入帳的訂單會略過');$('commitReason').textContent=reasons.length?'尚不能套用：'+reasons.join('；'):'核對完成，可以套用本次訂單。';$('addUnknown').disabled=!p.orders.some(o=>!o.duplicate&&o.items.some(x=>x.matches.length===0));
-const grouped=aggregatePreview(p);let html='<p>備貨日：'+esc($('day').value)+'｜本次新增 '+p.orders.filter(o=>!o.duplicate).length+' 列｜重複略過 '+p.orders.filter(o=>o.duplicate).length+' 列｜其他日期略過 '+p.excluded+' 列</p><p class="muted">今日總量＝當日已入帳需求＋本次新增需求，重複訂單不重算。相同商品名稱對照後合併，依溫層分區。</p>'+p.errors.map(e=>'<p class="red">'+esc(e)+'</p>').join('');
-for(const [temp,title] of [['1','常溫商品'],['3','冷凍商品'],['2','冷藏商品'],['unknown','溫層未註明／待確認']]){const rows=grouped.filter(g=>g.temp===temp).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));if(!rows.length)continue;html+='<h3>'+title+'</h3><div class="scroll">'+table(['商品','今日總量','單位','本次新增','狀態／名稱對照'],rows.map(g=>{const q=g.id?product(g.id):null;const status=q?esc(modes[q.mode]):'<span class="red">未建檔，請選對照或確認庫存充足</span>';const select=g.ref?'<br><select data-oi="'+g.ref.oi+'" data-xi="'+g.ref.xi+'"><option value="">修正名稱對照</option>'+state.products.filter(q=>!q.archived).map(q=>'<option value="'+q.id+'">'+esc(q.name)+'</option>').join('')+'</select>':'';return [esc(g.name),'<strong>'+g.total+'</strong>',esc(g.unit),g.fresh,status+select];}))+'</div>';}
-if(!$('commit').disabled){const sim=simulate(p);html+='<details><summary>查看本次扣庫存與缺件預估</summary>'+table(['商品','本次需求','本次缺件','套用後庫存'],sim.summary.map(g=>[esc(g.name),g.qty+' '+esc(g.unit),g.short,g.mode==='ample'?'充足':g.stock+' '+esc(g.unit)]))+'</details>';}
-const detail=p.orders.filter(o=>!o.duplicate).flatMap(o=>o.items.map(x=>[esc(o.order),esc(o.temp),esc(x.name),x.qty]));html+='<details><summary>查看原始訂單明細（核對用）</summary><div class="scroll">'+table(['訂單','溫層','原始品項','數量'],detail)+'</div></details>';$('previewResult').innerHTML=html;
-}
-$('previewResult').onchange=async e=>{if(!e.target.dataset.oi||!e.target.value)return;const o=preview.orders[+e.target.dataset.oi],x=o.items[+e.target.dataset.xi],p=product(e.target.value);if(state.products.some(q=>q.id!==p.id&&q.aliases.some(a=>norm(a)===norm(x.name))))return notify('此名稱已對應其他商品，請先到別名編輯修正');const kept=preview;await mutate('建立訂單名稱對照 '+x.name+' → '+p.name,()=>{if(!p.aliases.includes(x.name))p.aliases.push(x.name);});preview=kept;preview.orders.filter(o=>!o.duplicate).forEach(o=>o.items.forEach(x=>x.matches=match(x.name)));renderPreview();};
-function simulate(p){const stock=Object.fromEntries(state.products.map(q=>[q.id,q.stock])),summary={},entries=[];for(const o of p.orders.filter(o=>!o.duplicate)){const items=[];for(const x of o.items){if(x.matches.length!==1)throw Error('商品尚未唯一對照');const q=product(x.matches[0].id);if(q.mode==='pending')throw Error('商品狀態待確認');const short=q.mode==='ample'?0:Math.max(0,x.qty-stock[q.id]);if(q.mode!=='ample')stock[q.id]=Math.max(0,stock[q.id]-x.qty);items.push({id:q.id,qty:x.qty,short,resolved:0,raw:x.name});summary[q.id]??={id:q.id,name:q.name,unit:q.unit,mode:q.mode,qty:0,short:0};summary[q.id].qty+=x.qty;summary[q.id].short+=short;}entries.push({key:o.key,fingerprint:o.fingerprint,day:o.day,order:o.order,temp:o.temp,items});}return {entries,stock,summary:Object.values(summary).map(s=>({...s,stock:stock[s.id]}))};}
-$('refreshPreview').onclick=()=>{if(!preview)return notify('請先分析訂單');preview.orders.filter(o=>!o.duplicate).forEach(o=>o.items.forEach(x=>x.matches=match(x.name)));renderPreview();};
-$('addUnknown').onclick=async()=>{if(!preview)return;const names=[...new Set(preview.orders.filter(o=>!o.duplicate).flatMap(o=>o.items.filter(x=>x.matches.length===0).map(x=>x.name)))];if(!names.length)return;if(!confirm('以下 '+names.length+' 款未建檔商品將設為「庫存充足」，不報缺件。請確認其中沒有列管商品的不同名稱！\n\n'+names.join('\n')))return;const kept=preview;await mutate('確認未建檔商品庫存充足 '+names.length+' 款',()=>{names.forEach((name,i)=>{if(state.products.some(p=>p.archived&&p.aliases.some(a=>norm(a)===norm(name))))throw Error('此品項已封存，請先恢復商品：'+name);if(match(name).length)return;const u=name.match(/(?:\/|[（(])(箱|盒|包|組|罐|瓶|袋|件)[)）]$/);state.products.push({id:'p'+Date.now()+'_'+i,name,unit:u?u[1]:'件',stock:0,mode:'ample',aliases:[name]});});});preview=kept;if(preview){preview.orders.filter(o=>!o.duplicate).forEach(o=>o.items.forEach(x=>x.matches=match(x.name)));renderPreview();}};
-$('commit').onclick=async()=>{try{if(!preview||$('commit').disabled)return;const sim=simulate(preview);if(sim.entries.some(e=>state.entries.some(x=>x.key===e.key)))throw Error('預覽已失效，請重新分析');await mutate('套用 '+sim.entries.length+' 筆訂單',()=>{state.entries.push(...sim.entries);for(const p of state.products)if(p.mode!=='ample'&&p.mode!=='pending'){p.stock=sim.stock[p.id];p.mode=p.stock?'count':'out';}});preview=null;$('commit').disabled=true;$('addUnknown').disabled=true;$('commitReason').textContent='本次訂單已套用完成。';$('previewResult').textContent='已入帳，重複匯入會略過。';}catch(e){notify(e.message);}};
-function reportRows(){const day=$('reportDay').value,result=[];for(const p of state.products){let short=0;for(const e of state.entries)if(e.day===day)for(const i of e.items)if(i.id===p.id)short+=i.short;if(short>0)result.push([p.name,short,p.unit]);}return result;}
-function renderReport(){const rows=reportRows();const day=$('reportDay').value;const hasOrders=state.entries.some(e=>e.day===day);const units=new Map();for(const r of rows)units.set(r[2],(units.get(r[2])||0)+r[1]);const qty=[...units].map(([u,n])=>esc(n)+' '+esc(u)).join(' · ')||'0';$('report').innerHTML='<div class="report-hero"><div><div class="eyebrow">當日補貨清單</div><h3>'+esc(day)+'</h3><p>已扣除可用庫存，只顯示需要補貨的商品。</p></div><div class="report-count"><strong>'+rows.length+'</strong><span>項商品需補貨</span></div></div><div class="report-summary"><span>需補數量 <b>'+qty+'</b></span><span>不累加前日缺件</span></div>'+(rows.length?'<div class="shortage-list">'+rows.map((r,i)=>'<article class="shortage-item"><span class="item-number">'+String(i+1).padStart(2,'0')+'</span><div class="shortage-name"><strong>'+esc(r[0])+'</strong><small>需補貨</small></div><div class="shortage-qty">'+r[1]+'<small>'+esc(r[2])+'</small></div></article>').join('')+'</div>':'<div class="report-empty"><strong>'+(hasOrders?'當日無需補貨':'尚未產生報表')+'</strong><p>'+(hasOrders?'已入帳訂單的庫存足夠，無需補貨。':'請先匯入並確認套用所選備貨日的訂單。')+'</p></div>');$('entries').innerHTML=table(['備貨日','訂單','溫層','原品項','需求','缺件'],state.entries.filter(e=>e.day===day).flatMap(e=>e.items.map(i=>[e.day,e.order,e.temp,i.raw,i.qty,i.short].map(esc))));}
-$('reportDay').onchange=renderReport;
-function download(name,text,type){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);}
-$('backup').onclick=()=>download('缺件備份_'+today()+'.json',JSON.stringify({...state,undo:[]},null,2),'application/json');
-$('restore').onchange=async()=>{try{const f=$('restore').files[0];if(!f)return;const s=validate(JSON.parse(await f.text()));if(!confirm('還原將取代目前全部資料，建議先下載備份。確定還原？'))return;await mutate('還原備份',()=>{state={...s,undo:state.undo||[]};});}catch(e){notify('還原失敗：'+e.message);}finally{$('restore').value='';}};
-$('undo').disabled=true;$('undo').textContent='多人共用版不提供整批撤回';
-$('exportReport').onclick=()=>{const safe=v=>{let s=String(v);if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};download('缺件報表_'+$('reportDay').value+'.csv','\uFEFF'+[['需補貨商品','需補數量','單位'],...reportRows()].map(r=>r.map(safe).join(',')).join('\r\n'),'text/csv;charset=utf-8');};
+    <!-- [備份與設定] -->
+    <section id="panel_settings" class="panel" hidden>
+      <div class="settings-cloud">
+        <h2>雲端連線</h2>
+        <p id="cloudStatus">尚未連線，無法修改資料。</p>
+        <input
+          value="https://egctool-001-default-rtdb.firebaseio.com"
+          id="databaseURL"
+          placeholder="Firebase Realtime Database網址"
+          style="width: 65%"
+        /><button id="connectCloud">連線／更新雲端資料</button
+        ><button id="initializeCloud" disabled>建立雲端初始資料</button>
+        <p class="muted">
+          開啟網頁會預填公司資料庫網址並自動連線；若連線失敗，可按右上角「更新雲端資料」重試。
+        </p>
+      </div>
+      <div class="warn">
+        首次使用請先核對商品狀態與庫存。預載列管狀態尚待你確認；缺件按所選備貨日統計，不累加前日欠件。數量基準為11/6更新後，請勿將先前已扣過的訂單重新入帳。未建立對照的商品必須確認，才可套用。
+      </div>
+      <p>
+        新版開始記錄比對接單日與時間；舊版紀錄不會回推。內容相似度以訂單識別、接單日、備貨日、品名數量及溫層計算，達90%即提醒。備貨日仍用於篩選當日需求。
+      </p>
+      <p>
+        資料共用於Firebase，請定期下載備份。換電腦開啟此網站，也會自動連線並讀取共用資料。
+      </p>
+      <button id="backup">下載完整備份</button
+      ><label>還原備份 <input type="file" id="restore" accept=".json" /></label
+      ><button id="undo" class="secondary">撤回最後一次操作</button>
+    </section>
 
-function showView(view){const names={orders:'訂單比對',report:'缺件報表',inventory:'商品與庫存',history:'操作紀錄',settings:'備份與設定'};if(!names[view])return;for(const key of Object.keys(names)){$('panel_'+key).hidden=key!==view;$('nav_'+key).className=key===view?'active':'';}$('viewTitle').textContent=names[view];if(view==='report')renderReport();}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-view]');if(t)showView(t.dataset.view);});
-$('logs').onclick=()=>notify('多人共用版保留操作歷程，不提供整批回溯刪除，避免撤回其他人的更新。測試請使用獨立資料庫。');
-$('day').onchange=()=>{preview=null;$('commit').disabled=true;$('addUnknown').disabled=true;$('commitReason').textContent='備貨日已變更，請重新分析。';};
-window.addEventListener('unhandledrejection',e=>{e.preventDefault();notify(e.reason?.message||'雲端操作未完成，請重新連線');});
-$('day').value=$('reportDay').value=today();render();
-</script></html>
+    <!-- [商品與庫存] -->
+    <section id="panel_inventory" class="panel" hidden>
+      <div id="inventoryPanel">
+        <h2>商品與庫存</h2>
+        <p class="muted">
+          「設定剩餘」直接覆蓋現有數量；「增加進貨」加到現有數量。庫存充足不計數，缺貨列管則從0開始計算。每日缺件當日補齊；多買的剩餘量請在此登記。
+        </p>
+        <button id="openProductDialog">＋ 新增商品／批次設定剩餘量</button
+        ><label
+          ><input type="checkbox" id="showArchived" /> 顯示已封存商品</label
+        ><input id="search" placeholder="搜尋商品或別名" />
+        <div id="products" class="scroll"></div>
+      </div>
+    </section>
+
+    <!-- [訂單匯入] -->
+    <section id="panel_orders" class="panel">
+      <h2>匯入訂單並預覽</h2>
+      <p>
+        支援 UTF-8／Big5 的 TXT（Tab分隔）及CSV。Excel請先另存CSV
+        UTF-8。標題需有「訂單編號、品名、接單日、備貨日」；可含「序號、接單管道、溫層」。沒有序號的同單多列須先補上穩定且唯一的序號。
+      </p>
+      <div class="row">
+        <input type="file" id="ordersFile" accept=".txt,.csv,.tsv" /><label
+          >編碼
+          <select id="encoding">
+            <option value="utf-8">UTF-8</option>
+            <option value="big5">Big5</option>
+          </select></label
+        ><label>備貨日 <input id="day" type="date" /></label
+        ><button id="preview">分析預覽</button
+        ><button id="refreshPreview" class="secondary">重新檢查目前預覽</button
+        ><button id="addUnknown" class="secondary" disabled>
+          將未建檔商品設為庫存充足</button
+        ><button id="commit" disabled>確認套用本次訂單</button>
+      </div>
+      <details>
+        <summary>或貼上含標題的訂單表格</summary>
+        <textarea
+          id="orderText"
+          placeholder="從Excel複製含標題的資料貼到這裡"
+        ></textarea>
+      </details>
+      <div id="previewResult"></div>
+      <div id="commitReason" class="warn">請先分析訂單。</div>
+    </section>
+
+    <!-- [缺件報表] -->
+    <section id="panel_report" class="panel" hidden>
+      <h2>當日需補貨</h2>
+      <label>報表備貨日 <input id="reportDay" type="date" /></label
+      ><button id="exportReport">匯出CSV</button>
+      <div id="report" class="scroll"></div>
+      <details>
+        <summary>訂單入帳明細</summary>
+        <div id="entries" class="scroll"></div>
+      </details>
+    </section>
+    <section id="panel_history" class="panel" hidden>
+      <h2>操作紀錄</h2>
+      <p>
+        多人共用版保留操作歷程，不提供整批回溯刪除。測試資料請放獨立Firebase測試專案，避免影響正式共用資料。
+      </p>
+      <div id="logs"></div>
+    </section>
+    <footer>需連線使用・訂單資料存於Firebase・包裝數字不等於訂購數量</footer>
+  </main>
+
+  <!-- [商品設定彈窗] -->
+  <dialog id="productDialog" aria-labelledby="productDialogTitle">
+    <div class="row" style="justify-content: space-between">
+      <h2 id="productDialogTitle">新增商品與批次庫存</h2>
+      <button id="closeProductDialog" class="secondary">關閉</button>
+    </div>
+    <h3>新增商品</h3>
+    <p>
+      <input id="newName" placeholder="商品正式名稱" />
+      <input id="newUnit" placeholder="單位，例如箱" size="10" /><button
+        id="addProduct"
+      >
+        新增（待確認）
+      </button>
+    </p>
+    <h3>批次設定剩餘量</h3>
+    <p class="muted">輸入目前實際剩餘量，會覆蓋原庫存，不是增加進貨。</p>
+    <textarea id="bulk" placeholder="總匯點心包x11&#10;五木拉麵x4"></textarea
+    ><button id="bulkPreview">預覽批次更新</button>
+    <div id="bulkResult"></div>
+  </dialog>
+  <dialog id="compareDialog" aria-labelledby="dialogTitle">
+    <h2 id="dialogTitle"></h2>
+    <p id="dialogBody"></p>
+    <div class="row">
+      <button id="dialogYes">是</button
+      ><button id="dialogNo" class="secondary">我再想想</button>
+    </div>
+  </dialog>
+  <script>
+    "use strict";
+    const $ = (id) => document.getElementById(id),
+      KEY = "shortage-tool-v1",
+      modes = {
+        pending: "待確認",
+        ample: "庫存充足",
+        count: "按數量追蹤",
+        out: "缺貨列管",
+      };
+    const esc = (s) =>
+      String(s ?? "").replace(
+        /[&<>"']/g,
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          })[c],
+      );
+    const norm = (s) =>
+      String(s)
+        .normalize("NFKC")
+        .toLowerCase()
+        .replace(/[\s()（）\[\]【】]/g, "");
+    const today = () =>
+      new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Taipei" }).format(
+        new Date(),
+      );
+
+    // ============================================================
+    // [初始商品資料]
+    // ============================================================
+    const seed = [
+      ["萬歲牌總匯點心包", "盒", 11, "總匯點心包|(萬歲牌)總匯點心包(盒)"],
+      ["五木快煮拉麵", "箱", 4, "五木拉麵|(五木)快煮拉麵(箱)"],
+      ["桂格減糖黑十穀", "盒", 1, "黑十穀|減糖黑十穀|(桂格)減糖黑十穀(盒)"],
+      [
+        "舒酸定長效抗敏牙膏進階亮白",
+        "組",
+        5,
+        "舒酸定牙膏|(舒酸定)長效抗敏牙膏(進階亮白)(4入/組)",
+      ],
+      [
+        "翠果子航空米果綜合禮盒",
+        "盒",
+        7,
+        "航空米果|(翠果子)航空米果綜合禮盒(盒)",
+      ],
+      ["IRIS飯", "件", 4, "IRIS飯"],
+      ["北海青花椒鱈魚香絲", "包", 0, "(北海)青花椒鱈魚香絲(包)"],
+      ["義美減糖糙米奶", "箱", 0, "糙米奶|(義美)減糖糙米奶(箱)"],
+      [
+        "Pokka Sapporo極品脆粒玉米濃湯",
+        "箱",
+        0,
+        "Sapporo|(Pokka Sapporo)極品脆粒玉米濃湯(15罐/箱)",
+      ],
+      ["義美皇家夾心酥", "盒", 0, "皇家夾心酥"],
+      ["西雅圖極品嚴焙大濾掛咖啡", "盒", 0, "西雅圖咖啡"],
+      ["Juver蘋果汁", "箱", 0, "Juver 蘋果汁"],
+      ["美祿", "箱", 0, "美祿"],
+      ["康寶金黃玉米濃湯", "盒", null, "康寶玉米濃湯"],
+      ["康寶港式酸辣濃湯", "盒", null, "康寶酸辣濃湯"],
+      ["品客MINI原味", "盒", null, "品客mini"],
+      ["豐力富紐西蘭頂級純濃奶粉", "罐", null, "豐力富奶粉"],
+    ];
+    function initial() {
+      return {
+        version: 1,
+        products: seed.map((p, i) => ({
+          id: "p" + i,
+          name: p[0],
+          unit: p[1],
+          stock: p[2] ?? 0,
+          mode: p[2] === null ? "ample" : p[2] > 0 ? "count" : "out",
+          aliases: [p[0], ...p[3].split("|")],
+        })),
+        entries: [],
+        logs: [],
+        comparisons: [],
+        undo: [],
+      };
+    }
+    let state = initial(),
+      preview = null,
+      bulkChanges = null;
+
+    // ============================================================
+    // [資料格式驗證]
+    // ============================================================
+    function validate(s) {
+      if (
+        s?.version !== 1 ||
+        !Array.isArray(s.products) ||
+        !Array.isArray(s.entries) ||
+        !Array.isArray(s.logs)
+      )
+        throw Error("備份格式不符");
+      const ids = new Set();
+      for (const p of s.products) {
+        if (
+          !p.id ||
+          ids.has(p.id) ||
+          !p.name ||
+          !p.unit ||
+          !modes[p.mode] ||
+          !Number.isSafeInteger(p.stock) ||
+          p.stock < 0 ||
+          !Array.isArray(p.aliases) ||
+          p.aliases.some((a) => typeof a !== "string")
+        )
+          throw Error("商品資料不合法");
+        ids.add(p.id);
+      }
+      const keys = new Set();
+      for (const e of s.entries) {
+        if (
+          !e.key ||
+          keys.has(e.key) ||
+          !e.fingerprint ||
+          !e.day ||
+          !Array.isArray(e.items)
+        )
+          throw Error("訂單資料不合法");
+        keys.add(e.key);
+        for (const i of e.items)
+          if (
+            !ids.has(i.id) ||
+            !Number.isSafeInteger(i.qty) ||
+            i.qty <= 0 ||
+            !Number.isSafeInteger(i.short) ||
+            i.short < 0 ||
+            i.short > i.qty ||
+            !Number.isSafeInteger(i.resolved) ||
+            i.resolved < 0 ||
+            i.resolved > i.short
+          )
+            throw Error("訂單數量不合法");
+      }
+      if (
+        s.comparisons !== undefined &&
+        (!Array.isArray(s.comparisons) ||
+          s.comparisons.some(
+            (c) =>
+              !Array.isArray(c.days) ||
+              c.days.some((d) => typeof d !== "string") ||
+              !Array.isArray(c.tokens) ||
+              c.tokens.some((t) => typeof t !== "string") ||
+              !Number.isFinite(Date.parse(c.at)),
+          ))
+      )
+        throw Error("比對歷史格式不符");
+      return s;
+    }
+    let cloudURL = "",
+      cloudTag = null,
+      cloudReady = false,
+      cloudBusy = false,
+      cloudExists = false;
+    // [雲端網址設定] 每次開啟都使用公司資料庫，避免沿用其他測試網址。
+    const DEFAULT_DATABASE_URL =
+      "https://egctool-001-default-rtdb.firebaseio.com";
+    $("databaseURL").value = DEFAULT_DATABASE_URL;
+    function cloudStatus(t) {
+      $("cloudStatus").textContent = t;
+      $("bannerStatus").textContent = t;
+    }
+    function endpoint(raw) {
+      const u = new URL(raw);
+      if (
+        u.protocol !== "https:" ||
+        !/(^|\.)(firebaseio\.com|firebasedatabase\.app)$/.test(u.hostname) ||
+        u.pathname !== "/" ||
+        u.search ||
+        u.hash
+      )
+        throw Error(
+          "請填資料庫根網址，例如 https://專案-default-rtdb.asia-southeast1.firebasedatabase.app",
+        );
+      return u.origin + "/shortage/shared.json";
+    }
+
+    // ============================================================
+    // [雲端讀取與逾時處理]
+    // ============================================================
+    async function cloudGet() {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      try {
+        const r = await fetch(cloudURL, {
+          signal: controller.signal,
+          headers: { "X-Firebase-ETag": "true" },
+          cache: "no-store",
+        });
+        if (!r.ok)
+          throw Error("讀取失敗 HTTP " + r.status + "，請檢查網址與資料庫規則");
+        const tag = r.headers.get("ETag");
+        if (!tag) throw Error("無法取得雲端版本，已停止寫入");
+        return { tag, data: await r.json() };
+      } catch (e) {
+        if (e.name === "AbortError") throw Error("連線逾時，請檢查網路");
+        throw e;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    function decodeCloud(data) {
+      if (
+        !data ||
+        data.schema !== 1 ||
+        typeof data.payload !== "string" ||
+        !Number.isSafeInteger(data.revision)
+      )
+        throw Error("雲端資料格式不符");
+      return validate(JSON.parse(data.payload));
+    }
+    function invalidatePreview() {
+      preview = null;
+      bulkChanges = null;
+      $("commit").disabled = true;
+      $("addUnknown").disabled = true;
+      $("previewResult").textContent = "資料已更新，請重新分析訂單。";
+      $("commitReason").textContent = "請重新分析訂單。";
+      $("bulkResult").textContent = "";
+    }
+
+    // ============================================================
+    // [雲端連線與手動更新]
+    // ============================================================
+    async function connectCloud() {
+      if (cloudBusy) return;
+      cloudBusy = true;
+      cloudReady = false;
+      cloudStatus("正在連線雲端…");
+      $("bannerRefresh").disabled = true;
+      $("connectCloud").disabled = true;
+      $("initializeCloud").disabled = true;
+      try {
+        cloudURL = endpoint($("databaseURL").value.trim());
+        const remote = await cloudGet();
+        cloudTag = remote.tag;
+        cloudExists = remote.data !== null;
+        if (cloudExists) {
+          state = decodeCloud(remote.data);
+          cloudReady = true;
+          invalidatePreview();
+          render();
+          cloudStatus(
+            "已連線｜雲端版本 " +
+              remote.data.revision +
+              "｜更新時間 " +
+              formatCompareTime(remote.data.updatedAt),
+          );
+        } else cloudStatus("雲端尚無資料，請按「建立雲端初始資料」。");
+        $("initializeCloud").disabled = cloudExists;
+        try {
+          localStorage.setItem(
+            "shortage-cloud-url",
+            $("databaseURL").value.trim(),
+          );
+        } catch (e) {}
+      } catch (e) {
+        cloudStatus(
+          "連線失敗：" + e.message + "。請按右上角「更新雲端資料」重試。",
+        );
+      } finally {
+        cloudBusy = false;
+        $("bannerRefresh").disabled = false;
+        $("connectCloud").disabled = false;
+      }
+    }
+    async function putCloud(candidate, tag, revision) {
+      const payload = JSON.stringify({ ...candidate, undo: [] });
+      if (new TextEncoder().encode(payload).length > 4000000)
+        throw Error("雲端資料超過測試版4MB上限，請備份並聯絡修改分表版本");
+      const envelope = {
+        schema: 1,
+        revision,
+        payload,
+        updatedAt: new Date().toISOString(),
+      };
+      const r = await fetch(cloudURL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "if-match": tag,
+          "X-Firebase-ETag": "true",
+        },
+        body: JSON.stringify(envelope),
+      });
+      if (r.status === 412)
+        throw Error("其他人已更新資料，本次未寫入。請更新雲端資料並重新操作");
+      if (!r.ok) throw Error("儲存失敗 HTTP " + r.status);
+      return envelope;
+    }
+    $("connectCloud").onclick = connectCloud;
+    $("bannerRefresh").onclick = connectCloud;
+    $("openProductDialog").onclick = () => $("productDialog").showModal();
+    $("closeProductDialog").onclick = () => $("productDialog").close();
+    $("showArchived").onchange = render;
+    $("initializeCloud").onclick = async () => {
+      if (cloudBusy || cloudExists || !cloudTag) return;
+      if (
+        !confirm(
+          "將建立預載商品資料。庫存尚需核對；你也可以建立後還原正式JSON備份。確定建立？",
+        )
+      )
+        return;
+      cloudBusy = true;
+      try {
+        const e = await putCloud(initial(), cloudTag, 1);
+        cloudExists = true;
+        cloudStatus("已建立雲端起始資料");
+      } catch (e) {
+        cloudStatus(e.message);
+      } finally {
+        cloudBusy = false;
+        await connectCloud();
+      }
+    };
+    function notify(s) {
+      $("notice").textContent = s;
+      $("notice").style.display = "block";
+    }
+
+    // ============================================================
+    // [雲端儲存與版本衝突檢查]
+    // ============================================================
+    async function mutate(label, fn) {
+      if (!cloudReady || cloudBusy) {
+        notify("請先連線雲端，或等待上次操作完成");
+        throw Error("雲端尚未就緒");
+      }
+      cloudBusy = true;
+      const old = JSON.stringify(state);
+      document.querySelector("main").inert = true;
+      try {
+        const remote = await cloudGet();
+        if (remote.tag !== cloudTag) {
+          cloudReady = false;
+          throw Error(
+            "雲端已有其他更新。請按「連線／更新雲端資料」，重新確認後再操作",
+          );
+        }
+        fn();
+        state.logs.push({
+          at: new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }),
+          label,
+        });
+        state.undo = [];
+        validate(state);
+        const candidate = JSON.parse(JSON.stringify(state));
+        state = JSON.parse(old);
+        const e = await putCloud(
+          candidate,
+          remote.tag,
+          (remote.data?.revision || 0) + 1,
+        );
+        state = candidate;
+        cloudReady = false;
+        invalidatePreview();
+        render();
+        cloudStatus(
+          "已儲存｜雲端版本 " +
+            e.revision +
+            "｜" +
+            formatCompareTime(e.updatedAt),
+        );
+        notify(label + "，已儲存至雲端。");
+        return true;
+      } catch (e) {
+        state = JSON.parse(old);
+        cloudReady = false;
+        cloudStatus("尚未確認同步：" + e.message);
+        notify(
+          "操作未確認成功：" +
+            e.message +
+            "。請重新連線確認最新資料，勿直接重複送出。",
+        );
+        throw e;
+      } finally {
+        cloudBusy = false;
+        document.querySelector("main").inert = false;
+        if (!cloudReady) await connectCloud();
+      }
+    }
+    function product(id) {
+      return state.products.find((p) => p.id === id);
+    }
+    function match(name) {
+      const n = norm(name);
+      return state.products.filter(
+        (p) => !p.archived && p.aliases.some((a) => norm(a) === n),
+      );
+    }
+    function validQty(v, zero = true) {
+      if (String(v).trim() === "" || !/^\d+$/.test(String(v).trim()))
+        throw Error("請輸入整數數量");
+      const n = Number(v);
+      if (!Number.isSafeInteger(n) || n < (zero ? 0 : 1))
+        throw Error("數量不合法");
+      return n;
+    }
+    function table(headers, rows) {
+      return (
+        "<table><thead><tr>" +
+        headers.map((h) => "<th>" + esc(h) + "</th>").join("") +
+        "</tr></thead><tbody>" +
+        rows
+          .map(
+            (r) =>
+              "<tr>" +
+              r
+                .map(
+                  (c, i) =>
+                    '<td data-label="' +
+                    esc(headers[i] || "") +
+                    '">' +
+                    c +
+                    "</td>",
+                )
+                .join("") +
+              "</tr>",
+          )
+          .join("") +
+        "</tbody></table>"
+      );
+    }
+    function render() {
+      const q = norm($("search").value);
+      $("products").innerHTML = table(
+        ["商品／別名", "狀態", "目前可用", "更新操作"],
+        state.products
+          .filter(
+            (p) =>
+              (!p.archived || $("showArchived").checked) &&
+              norm(p.name + p.aliases.join()).includes(q),
+          )
+          .map((p) => [
+            esc(p.name) +
+              (p.archived ? ' <span class="stock-badge">已封存</span>' : "") +
+              "<br><small>" +
+              esc(p.unit) +
+              '</small><br><button class="secondary" data-alias="' +
+              esc(p.id) +
+              '">編輯別名</button>',
+            '<select data-mode="' +
+              esc(p.id) +
+              '">' +
+              Object.entries(modes)
+                .map(
+                  ([k, v]) =>
+                    '<option value="' +
+                    k +
+                    '" ' +
+                    (p.mode === k ? "selected" : "") +
+                    ">" +
+                    v +
+                    "</option>",
+                )
+                .join("") +
+              "</select>",
+            p.mode === "ample"
+              ? "充足，未清點"
+              : p.mode === "pending"
+                ? "待確認"
+                : esc(p.stock) + " " + esc(p.unit),
+            '<input type="number" min="0" step="1" id="qty_' +
+              p.id +
+              '" placeholder="數量"><button data-set="' +
+              p.id +
+              '">設定剩餘</button><button class="secondary" data-add="' +
+              p.id +
+              '">增加進貨</button><button class="danger" data-remove="' +
+              p.id +
+              '">刪除</button>' +
+              (p.archived
+                ? '<button class="secondary" data-unarchive="' +
+                  p.id +
+                  '">恢復</button>'
+                : ""),
+          ]),
+      );
+      $("logs").innerHTML = table(
+        ["時間", "操作內容", "刪除與還原"],
+        state.logs
+          .map((l, i) => [
+            esc(l.at),
+            esc(l.label),
+            i >= state.logs.length - (state.undo || []).length
+              ? '<button class="danger" data-delete-log="' +
+                i +
+                '">刪除紀錄並還原資料</button>'
+              : "<small>雲端歷程保留</small>",
+          ])
+          .reverse(),
+      );
+      renderReport();
+      renderLastCompare();
+    }
+    $("search").oninput = render;
+
+    // ============================================================
+    // [商品刪除與封存]
+    // ============================================================
+    async function removeProduct(id) {
+      const p = product(id);
+      if (!p) return;
+      const linked = state.entries.some((e) =>
+        e.items.some((x) => x.id === id),
+      );
+      if (linked) {
+        if (
+          !confirm(
+            "此商品已有訂單紀錄，將改為封存並從一般清單隱藏，歷史報表會保留。\n商品：" +
+              p.name +
+              "\n目前庫存：" +
+              p.stock +
+              p.unit +
+              "\n確定封存？",
+          )
+        )
+          return;
+        await mutate("封存商品 " + p.name, () => (p.archived = true));
+      } else {
+        if (
+          !confirm(
+            "確定刪除「" +
+              p.name +
+              "」？\n目前庫存：" +
+              p.stock +
+              p.unit +
+              "\n商品、庫存及名稱對照將一併刪除。",
+          )
+        )
+          return;
+        await mutate("刪除商品 " + p.name, () => {
+          state.products = state.products.filter((x) => x.id !== id);
+        });
+      }
+    }
+
+    $("products").onclick = async (e) => {
+      const t = e.target,
+        id =
+          t.dataset.alias ||
+          t.dataset.set ||
+          t.dataset.add ||
+          t.dataset.remove ||
+          t.dataset.unarchive;
+      if (!id) return;
+      const p = product(id);
+      try {
+        if (t.dataset.remove) {
+          await removeProduct(id);
+          return;
+        }
+        if (t.dataset.unarchive) {
+          await mutate("恢復商品 " + p.name, () => (p.archived = false));
+          return;
+        }
+        if (t.dataset.alias) {
+          const a = prompt(
+            "別名一行一個，需保留規格；完整名稱精確對照。",
+            p.aliases.join("\n"),
+          );
+          if (a === null) return;
+          const aliases = [
+            ...new Set([
+              p.name,
+              ...a
+                .split("\n")
+                .map((x) => x.trim())
+                .filter(Boolean),
+            ]),
+          ];
+          if (
+            state.products.some(
+              (x) =>
+                x.id !== id &&
+                x.aliases.some((a) => aliases.some((b) => norm(a) === norm(b))),
+            )
+          )
+            throw Error("別名已被其他商品使用");
+          await mutate("更新 " + p.name + " 別名", () => (p.aliases = aliases));
+        } else {
+          const n = validQty($("qty_" + id).value);
+          if (t.dataset.add && ["ample", "pending"].includes(p.mode))
+            throw Error("請先設定目前剩餘量，再登記進貨");
+          await mutate(
+            (t.dataset.set ? "設定剩餘 " : "增加進貨 ") +
+              p.name +
+              " " +
+              n +
+              p.unit,
+            () => {
+              p.stock = t.dataset.set ? n : p.stock + n;
+              if (!Number.isSafeInteger(p.stock)) throw Error("數量過大");
+              p.mode = p.stock ? "count" : "out";
+            },
+          );
+        }
+      } catch (e) {
+        notify(e.message);
+      }
+    };
+    $("products").onchange = async (e) => {
+      const id = e.target.dataset.mode;
+      if (!id) return;
+      const p = product(id),
+        m = e.target.value;
+      if (m === "count" && p.mode === "ample") {
+        notify("請用「設定剩餘」輸入實際庫存量");
+        render();
+        return;
+      }
+      await mutate("變更 " + p.name + " 為 " + modes[m], () => {
+        p.mode = m;
+        if (m !== "count") p.stock = 0;
+      });
+    };
+    $("addProduct").onclick = async () => {
+      const name = $("newName").value.trim(),
+        unit = $("newUnit").value.trim();
+      if (!name || !unit) return notify("請填商品名稱與單位");
+      if (
+        state.products.some((p) =>
+          p.aliases.some((a) => norm(a) === norm(name)),
+        )
+      )
+        return notify("商品或別名已存在（含封存商品），請搜尋並恢復原商品");
+      await mutate("新增商品 " + name, () =>
+        state.products.push({
+          id: "p" + Date.now(),
+          name,
+          unit,
+          stock: 0,
+          mode: "pending",
+          aliases: [name],
+        }),
+      );
+    };
+    $("bulkPreview").onclick = () => {
+      try {
+        const seen = new Set();
+        bulkChanges = $("bulk")
+          .value.trim()
+          .split("\n")
+          .map((line) => {
+            const a = parseItem(line);
+            const m = match(a.name);
+            if (m.length !== 1) throw Error(line + "：找不到唯一商品對照");
+            if (seen.has(m[0].id)) throw Error("同商品重複，請合併後輸入");
+            seen.add(m[0].id);
+            return { id: m[0].id, qty: a.qty };
+          });
+        $("bulkResult").innerHTML =
+          table(
+            ["商品", "原庫存", "新庫存"],
+            bulkChanges.map((x) => [
+              esc(product(x.id).name),
+              esc(product(x.id).stock),
+              esc(x.qty),
+            ]),
+          ) + '<button id="bulkApply">確認設定剩餘量</button>';
+        $("bulkApply").onclick = async () => {
+          await mutate("批次設定剩餘量", () =>
+            bulkChanges.forEach((x) => {
+              const p = product(x.id);
+              p.stock = x.qty;
+              p.mode = x.qty ? "count" : "out";
+            }),
+          );
+          $("bulkResult").textContent = "已更新";
+        };
+      } catch (e) {
+        notify(e.message);
+      }
+    };
+
+    // ============================================================
+    // [訂單解析]
+    // ============================================================
+    function parseDelimited(text, delimiter) {
+      const rows = [];
+      let row = [],
+        cell = "",
+        quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') {
+          if (quoted && text[i + 1] === '"') {
+            cell += '"';
+            i++;
+          } else if (quoted || cell === "") quoted = !quoted;
+          else cell += c;
+        } else if (c === delimiter && !quoted) {
+          row.push(cell);
+          cell = "";
+        } else if ((c === "\n" || c === "\r") && !quoted) {
+          if (c === "\r" && text[i + 1] === "\n") i++;
+          row.push(cell);
+          if (row.some((v) => v.trim())) rows.push(row);
+          row = [];
+          cell = "";
+        } else cell += c;
+      }
+      if (quoted) throw Error("引號未閉合");
+      row.push(cell);
+      if (row.some((v) => v.trim())) rows.push(row);
+      return rows;
+    }
+    function splitItems(text) {
+      let depth = 0,
+        parts = [],
+        s = "";
+      for (const c of text) {
+        if ("([（【".includes(c)) depth++;
+        if (")]）】".includes(c)) depth = Math.max(0, depth - 1);
+        if (",，、;；\n".includes(c) && depth === 0) {
+          if (s.trim()) parts.push(s.trim());
+          s = "";
+        } else s += c;
+      }
+      if (s.trim()) parts.push(s.trim());
+      return parts;
+    }
+    function parseItem(raw) {
+      const s = raw.normalize("NFKC").trim();
+      const m = s.match(/^(.*?)\s*[xX×*＊]\s*(\d+)\s*$/);
+      if (!m || !m[1].trim()) throw Error("缺少明確的結尾x數量：" + raw);
+      return { name: m[1].trim(), qty: validQty(m[2], false) };
+    }
+    function dateNorm(s) {
+      const m = String(s)
+        .trim()
+        .match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+      if (!m) return "";
+      return m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0");
+    }
+    function parseOrders(text, day) {
+      const rows = parseDelimited(
+        text.replace(/^\uFEFF/, ""),
+        text.includes("\t") ? "\t" : ",",
+      );
+      if (rows.length < 2) throw Error("沒有可解析的訂單");
+      const h = rows.shift().map((x) => x.trim());
+      const idx = (k) => h.indexOf(k);
+      for (const k of ["訂單編號", "品名", "備貨日"])
+        if (idx(k) < 0) throw Error("缺少欄位：" + k);
+      if (h.some((x) => /^(訂購數量|數量|商品數量)$/.test(x)))
+        throw Error(
+          "偵測到獨立數量欄。此版本請先整理為品名內x數量，並移除獨立數量欄，避免重複乘算",
+        );
+      let excluded = 0;
+      const errors = [],
+        orders = [],
+        seen = new Set();
+      rows.forEach((r, i) => {
+        const d = dateNorm(r[idx("備貨日")]);
+        if (!d) {
+          errors.push("資料列" + (i + 1) + "：備貨日格式無法辨識");
+          return;
+        }
+        if (d !== day) {
+          excluded++;
+          return;
+        }
+        const order = r[idx("訂單編號")]?.trim(),
+          raw = r[idx("品名")]?.trim(),
+          platform = idx("接單管道") >= 0 ? r[idx("接單管道")].trim() : "";
+        const serial = idx("序號") >= 0 ? r[idx("序號")].trim() : "";
+        const key = JSON.stringify([platform, order, serial]);
+        try {
+          if (!order || !raw) throw Error("缺訂單編號或品名");
+          if (seen.has(key)) throw Error("同一訂單列重複，需唯一序號");
+          seen.add(key);
+          if (idx("備註") >= 0 && /取消|作廢/.test(r[idx("備註")] || ""))
+            throw Error("疑似取消訂單，請先從來源確認並移除");
+          const fingerprint = JSON.stringify([d, raw, r[idx("溫層")] || ""]);
+          const existing = state.entries.find((e) => e.key === key);
+          if (existing) {
+            if (existing.fingerprint !== fingerprint)
+              throw Error("已入帳訂單有異動，請先確認原紀錄，禁止再次扣庫存");
+            orders.push({ key, duplicate: true, order, raw });
+            return;
+          }
+          const items = splitItems(raw).map(parseItem);
+          if (!items.length) throw Error("無品項");
+          orders.push({
+            key,
+            fingerprint,
+            day: d,
+            order,
+            raw,
+            temp: idx("溫層") >= 0 ? r[idx("溫層")] : "未註明",
+            items: items.map((x) => ({ ...x, matches: match(x.name) })),
+          });
+        } catch (e) {
+          errors.push("訂單 " + (order || i + 1) + "：" + e.message);
+        }
+      });
+      return { orders, errors, excluded };
+    }
+    function modal(title, body, question = false) {
+      return new Promise((resolve) => {
+        const d = $("compareDialog");
+        $("dialogTitle").textContent = title;
+        $("dialogBody").textContent = body;
+        $("dialogYes").textContent = question ? "是" : "知道了";
+        $("dialogNo").hidden = !question;
+        const finish = (result) => {
+          d.close();
+          resolve(result);
+        };
+        $("dialogYes").onclick = () => finish(true);
+        $("dialogNo").onclick = () => finish(false);
+        d.oncancel = (e) => {
+          e.preventDefault();
+          finish(false);
+        };
+        d.showModal();
+      });
+    }
+    function formatCompareTime(at) {
+      return new Date(at).toLocaleString("zh-TW", {
+        timeZone: "Asia/Taipei",
+        hour12: false,
+      });
+    }
+    function renderLastCompare() {
+      const last = (state.comparisons || []).at(-1);
+      $("lastCompare").textContent = last
+        ? "最後比對接單日：" +
+          last.days.join("、") +
+          "\n比對時間：" +
+          formatCompareTime(last.at)
+        : "最後比對接單日：尚無紀錄";
+      $("lastCompare").style.whiteSpace = "pre-line";
+    }
+    function sourceMetadata(text) {
+      const rows = parseDelimited(
+        text.replace(/^\uFEFF/, ""),
+        text.includes("\t") ? "\t" : ",",
+      );
+      const h = rows.shift()?.map((x) => x.trim()) || [],
+        ix = h.indexOf("接單日");
+      if (ix < 0)
+        throw Error("缺少「接單日」欄位，無法記錄與檢查接單日，請補上後匯入");
+      const tokens = [],
+        days = new Set();
+      for (const r of rows) {
+        const day = dateNorm(r[ix]);
+        if (!day)
+          throw Error("有訂單的「接單日」空白或格式無法辨識，請使用YYYY/MM/DD");
+        days.add(day);
+        tokens.push(
+          JSON.stringify(
+            [
+              "接單日",
+              "訂單編號",
+              "接單管道",
+              "序號",
+              "備貨日",
+              "品名",
+              "溫層",
+            ].map((k) => {
+              const v = r[h.indexOf(k)] || "";
+              return k === "接單日" || k === "備貨日"
+                ? dateNorm(v)
+                : v.normalize("NFKC").trim();
+            }),
+          ),
+        );
+      }
+      if (!tokens.length) throw Error("檔案沒有訂單");
+      return { days: [...days].sort(), tokens: tokens.sort() };
+    }
+    function contentSimilarity(a, b) {
+      const count = new Map();
+      for (const t of a) count.set(t, (count.get(t) || 0) + 1);
+      let overlap = 0;
+      for (const t of b)
+        if (count.get(t) > 0) {
+          overlap++;
+          count.set(t, count.get(t) - 1);
+        }
+      return a.length + b.length ? (2 * overlap) / (a.length + b.length) : 0;
+    }
+    let analyzing = false;
+    $("preview").onclick = async () => {
+      if (analyzing) return;
+      analyzing = true;
+      $("preview").disabled = true;
+      try {
+        let text = $("orderText").value.trim();
+        const f = $("ordersFile").files[0];
+        if (f)
+          text = new TextDecoder($("encoding").value, { fatal: true }).decode(
+            await f.arrayBuffer(),
+          );
+        if (!text) throw Error("請選檔案或貼上訂單");
+        const meta = sourceMetadata(text),
+          history = state.comparisons || [];
+        const sameDays = meta.days.filter((day) =>
+          history.some((c) => c.days.includes(day)),
+        );
+        if (sameDays.length) {
+          const yes = await modal(
+            "接單日已有比對紀錄",
+            sameDays.join("、") +
+              " 的訂單檔案已匯入進行過比對，是否仍要繼續？\n\n選擇「是」後，系統將檢查檔案內容；已入帳的相同訂單仍會自動略過。",
+            true,
+          );
+          if (!yes) return;
+        }
+        const similar = history
+          .map((c) => ({ c, score: contentSimilarity(meta.tokens, c.tokens) }))
+          .filter((x) => x.score >= 0.9)
+          .sort((a, b) => b.score - a.score || b.c.at.localeCompare(a.c.at))[0];
+        if (similar)
+          await modal(
+            similar.score === 1
+              ? "此檔案已進行過比對"
+              : "此檔案與先前比對內容高度相似",
+            "內容相似度：" +
+              Math.round(similar.score * 100) +
+              "%\n先前比對時間：" +
+              formatCompareTime(similar.c.at) +
+              "\n先前檔案：" +
+              similar.c.name +
+              "\n\n將顯示比對預覽；已入帳訂單不會再次扣除庫存。",
+          );
+        preview = parseOrders(text, $("day").value);
+        renderPreview();
+        if (!preview.errors.length) {
+          const kept = preview;
+          await mutate("完成訂單比對｜接單日 " + meta.days.join("、"), () => {
+            state.comparisons ??= [];
+            state.comparisons.push({
+              ...meta,
+              at: new Date().toISOString(),
+              name: f ? f.name : "貼上訂單資料",
+            });
+          });
+          preview = kept;
+          renderPreview();
+        }
+      } catch (e) {
+        preview = null;
+        $("commit").disabled = true;
+        $("commitReason").textContent = "分析失敗：" + e.message;
+        notify("分析失敗：" + e.message);
+      } finally {
+        analyzing = false;
+        $("preview").disabled = false;
+      }
+    };
+
+    // ============================================================
+    // [彙整預覽與溫層]
+    // ============================================================
+    function tempKey(t) {
+      t = String(t ?? "").trim();
+      return t === "1" || t === "常溫"
+        ? "1"
+        : t === "3" || t === "冷凍"
+          ? "3"
+          : t === "2" || t === "冷藏"
+            ? "2"
+            : "unknown";
+    }
+    function aggregatePreview(p) {
+      const groups = new Map(),
+        day = $("day").value;
+      function add(id, name, unit, temp, qty, fresh, ref) {
+        const key = JSON.stringify([tempKey(temp), id || norm(name)]);
+        if (!groups.has(key))
+          groups.set(key, {
+            id,
+            name,
+            unit,
+            temp: tempKey(temp),
+            total: 0,
+            fresh: 0,
+            ref,
+          });
+        const g = groups.get(key);
+        g.total += qty;
+        if (fresh) g.fresh += qty;
+        if (ref) g.ref = ref;
+      }
+      for (const e of state.entries)
+        if (e.day === day)
+          for (const x of e.items) {
+            const q = product(x.id);
+            add(q.id, q.name, q.unit, e.temp, x.qty, false, null);
+          }
+      p.orders.forEach((o, oi) => {
+        if (o.duplicate) return;
+        o.items.forEach((x, xi) => {
+          const q = x.matches.length === 1 ? product(x.matches[0].id) : null;
+          add(
+            q?.id,
+            q?.name || x.name,
+            q?.unit || "待確認",
+            o.temp,
+            x.qty,
+            true,
+            { oi, xi, raw: x.name },
+          );
+        });
+      });
+      return [...groups.values()];
+    }
+    function renderPreview() {
+      const p = preview;
+      let unresolved = 0;
+      for (const o of p.orders)
+        if (!o.duplicate)
+          for (const x of o.items)
+            if (
+              x.matches.length !== 1 ||
+              product(x.matches[0].id).mode === "pending"
+            )
+              unresolved++;
+      $("commit").disabled = !!(
+        p.errors.length ||
+        unresolved ||
+        !p.orders.some((o) => !o.duplicate)
+      );
+      const reasons = [];
+      if (p.errors.length)
+        reasons.push(
+          "有 " + p.errors.length + " 筆資料錯誤，請修正來源後重新分析",
+        );
+      if (unresolved)
+        reasons.push(
+          "有 " + unresolved + " 個品項尚未對照，或商品狀態為待確認",
+        );
+      if (!p.orders.some((o) => !o.duplicate))
+        reasons.push("沒有可新增的訂單，請確認備貨日；已入帳的訂單會略過");
+      $("commitReason").textContent = reasons.length
+        ? "尚不能套用：" + reasons.join("；")
+        : "核對完成，可以套用本次訂單。";
+      $("addUnknown").disabled = !p.orders.some(
+        (o) => !o.duplicate && o.items.some((x) => x.matches.length === 0),
+      );
+      const grouped = aggregatePreview(p);
+      let html =
+        "<p>備貨日：" +
+        esc($("day").value) +
+        "｜本次新增 " +
+        p.orders.filter((o) => !o.duplicate).length +
+        " 列｜重複略過 " +
+        p.orders.filter((o) => o.duplicate).length +
+        " 列｜其他日期略過 " +
+        p.excluded +
+        ' 列</p><p class="muted">今日總量＝當日已入帳需求＋本次新增需求，重複訂單不重算。相同商品名稱對照後合併，依溫層分區。</p>' +
+        p.errors.map((e) => '<p class="red">' + esc(e) + "</p>").join("");
+      for (const [temp, title] of [
+        ["1", "常溫商品"],
+        ["3", "冷凍商品"],
+        ["2", "冷藏商品"],
+        ["unknown", "溫層未註明／待確認"],
+      ]) {
+        const rows = grouped
+          .filter((g) => g.temp === temp)
+          .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+        if (!rows.length) continue;
+        html +=
+          "<h3>" +
+          title +
+          '</h3><div class="scroll">' +
+          table(
+            ["商品", "今日總量", "單位", "本次新增", "狀態／名稱對照"],
+            rows.map((g) => {
+              const q = g.id ? product(g.id) : null;
+              const status = q
+                ? esc(modes[q.mode])
+                : '<span class="red">未建檔，請選對照或確認庫存充足</span>';
+              const select = g.ref
+                ? '<br><select data-oi="' +
+                  g.ref.oi +
+                  '" data-xi="' +
+                  g.ref.xi +
+                  '"><option value="">修正名稱對照</option>' +
+                  state.products
+                    .filter((q) => !q.archived)
+                    .map(
+                      (q) =>
+                        '<option value="' +
+                        q.id +
+                        '">' +
+                        esc(q.name) +
+                        "</option>",
+                    )
+                    .join("") +
+                  "</select>"
+                : "";
+              return [
+                esc(g.name),
+                "<strong>" + g.total + "</strong>",
+                esc(g.unit),
+                g.fresh,
+                status + select,
+              ];
+            }),
+          ) +
+          "</div>";
+      }
+      if (!$("commit").disabled) {
+        const sim = simulate(p);
+        html +=
+          "<details><summary>查看本次扣庫存與缺件預估</summary>" +
+          table(
+            ["商品", "本次需求", "本次缺件", "套用後庫存"],
+            sim.summary.map((g) => [
+              esc(g.name),
+              g.qty + " " + esc(g.unit),
+              g.short,
+              g.mode === "ample" ? "充足" : g.stock + " " + esc(g.unit),
+            ]),
+          ) +
+          "</details>";
+      }
+      const detail = p.orders
+        .filter((o) => !o.duplicate)
+        .flatMap((o) =>
+          o.items.map((x) => [esc(o.order), esc(o.temp), esc(x.name), x.qty]),
+        );
+      html +=
+        '<details><summary>查看原始訂單明細（核對用）</summary><div class="scroll">' +
+        table(["訂單", "溫層", "原始品項", "數量"], detail) +
+        "</div></details>";
+      $("previewResult").innerHTML = html;
+    }
+    $("previewResult").onchange = async (e) => {
+      if (!e.target.dataset.oi || !e.target.value) return;
+      const o = preview.orders[+e.target.dataset.oi],
+        x = o.items[+e.target.dataset.xi],
+        p = product(e.target.value);
+      if (
+        state.products.some(
+          (q) =>
+            q.id !== p.id && q.aliases.some((a) => norm(a) === norm(x.name)),
+        )
+      )
+        return notify("此名稱已對應其他商品，請先到別名編輯修正");
+      const kept = preview;
+      await mutate("建立訂單名稱對照 " + x.name + " → " + p.name, () => {
+        if (!p.aliases.includes(x.name)) p.aliases.push(x.name);
+      });
+      preview = kept;
+      preview.orders
+        .filter((o) => !o.duplicate)
+        .forEach((o) => o.items.forEach((x) => (x.matches = match(x.name))));
+      renderPreview();
+    };
+    function simulate(p) {
+      const stock = Object.fromEntries(
+          state.products.map((q) => [q.id, q.stock]),
+        ),
+        summary = {},
+        entries = [];
+      for (const o of p.orders.filter((o) => !o.duplicate)) {
+        const items = [];
+        for (const x of o.items) {
+          if (x.matches.length !== 1) throw Error("商品尚未唯一對照");
+          const q = product(x.matches[0].id);
+          if (q.mode === "pending") throw Error("商品狀態待確認");
+          const short =
+            q.mode === "ample" ? 0 : Math.max(0, x.qty - stock[q.id]);
+          if (q.mode !== "ample")
+            stock[q.id] = Math.max(0, stock[q.id] - x.qty);
+          items.push({ id: q.id, qty: x.qty, short, resolved: 0, raw: x.name });
+          summary[q.id] ??= {
+            id: q.id,
+            name: q.name,
+            unit: q.unit,
+            mode: q.mode,
+            qty: 0,
+            short: 0,
+          };
+          summary[q.id].qty += x.qty;
+          summary[q.id].short += short;
+        }
+        entries.push({
+          key: o.key,
+          fingerprint: o.fingerprint,
+          day: o.day,
+          order: o.order,
+          temp: o.temp,
+          items,
+        });
+      }
+      return {
+        entries,
+        stock,
+        summary: Object.values(summary).map((s) => ({
+          ...s,
+          stock: stock[s.id],
+        })),
+      };
+    }
+    $("refreshPreview").onclick = () => {
+      if (!preview) return notify("請先分析訂單");
+      preview.orders
+        .filter((o) => !o.duplicate)
+        .forEach((o) => o.items.forEach((x) => (x.matches = match(x.name))));
+      renderPreview();
+    };
+    $("addUnknown").onclick = async () => {
+      if (!preview) return;
+      const names = [
+        ...new Set(
+          preview.orders
+            .filter((o) => !o.duplicate)
+            .flatMap((o) =>
+              o.items.filter((x) => x.matches.length === 0).map((x) => x.name),
+            ),
+        ),
+      ];
+      if (!names.length) return;
+      if (
+        !confirm(
+          "以下 " +
+            names.length +
+            " 款未建檔商品將設為「庫存充足」，不報缺件。請確認其中沒有列管商品的不同名稱！\n\n" +
+            names.join("\n"),
+        )
+      )
+        return;
+      const kept = preview;
+      await mutate("確認未建檔商品庫存充足 " + names.length + " 款", () => {
+        names.forEach((name, i) => {
+          if (
+            state.products.some(
+              (p) =>
+                p.archived && p.aliases.some((a) => norm(a) === norm(name)),
+            )
+          )
+            throw Error("此品項已封存，請先恢復商品：" + name);
+          if (match(name).length) return;
+          const u = name.match(/(?:\/|[（(])(箱|盒|包|組|罐|瓶|袋|件)[)）]$/);
+          state.products.push({
+            id: "p" + Date.now() + "_" + i,
+            name,
+            unit: u ? u[1] : "件",
+            stock: 0,
+            mode: "ample",
+            aliases: [name],
+          });
+        });
+      });
+      preview = kept;
+      if (preview) {
+        preview.orders
+          .filter((o) => !o.duplicate)
+          .forEach((o) => o.items.forEach((x) => (x.matches = match(x.name))));
+        renderPreview();
+      }
+    };
+    $("commit").onclick = async () => {
+      try {
+        if (!preview || $("commit").disabled) return;
+        const sim = simulate(preview);
+        if (sim.entries.some((e) => state.entries.some((x) => x.key === e.key)))
+          throw Error("預覽已失效，請重新分析");
+        await mutate("套用 " + sim.entries.length + " 筆訂單", () => {
+          state.entries.push(...sim.entries);
+          for (const p of state.products)
+            if (p.mode !== "ample" && p.mode !== "pending") {
+              p.stock = sim.stock[p.id];
+              p.mode = p.stock ? "count" : "out";
+            }
+        });
+        preview = null;
+        $("commit").disabled = true;
+        $("addUnknown").disabled = true;
+        $("commitReason").textContent = "本次訂單已套用完成。";
+        $("previewResult").textContent = "已入帳，重複匯入會略過。";
+      } catch (e) {
+        notify(e.message);
+      }
+    };
+
+    // ============================================================
+    // [缺件報表計算]
+    // ============================================================
+    function reportRows() {
+      const day = $("reportDay").value,
+        result = [];
+      for (const p of state.products) {
+        let short = 0;
+        for (const e of state.entries)
+          if (e.day === day)
+            for (const i of e.items) if (i.id === p.id) short += i.short;
+        if (short > 0) result.push([p.name, short, p.unit]);
+      }
+      return result;
+    }
+    function renderReport() {
+      const rows = reportRows();
+      const day = $("reportDay").value;
+      const hasOrders = state.entries.some((e) => e.day === day);
+      const units = new Map();
+      for (const r of rows) units.set(r[2], (units.get(r[2]) || 0) + r[1]);
+      const qty =
+        [...units].map(([u, n]) => esc(n) + " " + esc(u)).join(" · ") || "0";
+      $("report").innerHTML =
+        '<div class="report-hero"><div><div class="eyebrow">當日補貨清單</div><h3>' +
+        esc(day) +
+        '</h3><p>已扣除可用庫存，只顯示需要補貨的商品。</p></div><div class="report-count"><strong>' +
+        rows.length +
+        '</strong><span>項商品需補貨</span></div></div><div class="report-summary"><span>需補數量 <b>' +
+        qty +
+        "</b></span><span>不累加前日缺件</span></div>" +
+        (rows.length
+          ? '<div class="shortage-list">' +
+            rows
+              .map(
+                (r, i) =>
+                  '<article class="shortage-item"><span class="item-number">' +
+                  String(i + 1).padStart(2, "0") +
+                  '</span><div class="shortage-name"><strong>' +
+                  esc(r[0]) +
+                  '</strong><small>需補貨</small></div><div class="shortage-qty">' +
+                  r[1] +
+                  "<small>" +
+                  esc(r[2]) +
+                  "</small></div></article>",
+              )
+              .join("") +
+            "</div>"
+          : '<div class="report-empty"><strong>' +
+            (hasOrders ? "當日無需補貨" : "尚未產生報表") +
+            "</strong><p>" +
+            (hasOrders
+              ? "已入帳訂單的庫存足夠，無需補貨。"
+              : "請先匯入並確認套用所選備貨日的訂單。") +
+            "</p></div>");
+      $("entries").innerHTML = table(
+        ["備貨日", "訂單", "溫層", "原品項", "需求", "缺件"],
+        state.entries
+          .filter((e) => e.day === day)
+          .flatMap((e) =>
+            e.items.map((i) =>
+              [e.day, e.order, e.temp, i.raw, i.qty, i.short].map(esc),
+            ),
+          ),
+      );
+    }
+    $("reportDay").onchange = renderReport;
+
+    // ============================================================
+    // [備份及匯出]
+    // ============================================================
+    function download(name, text, type) {
+      const u = URL.createObjectURL(new Blob([text], { type })),
+        a = document.createElement("a");
+      a.href = u;
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(u), 3000);
+    }
+    $("backup").onclick = () =>
+      download(
+        "缺件備份_" + today() + ".json",
+        JSON.stringify({ ...state, undo: [] }, null, 2),
+        "application/json",
+      );
+    $("restore").onchange = async () => {
+      try {
+        const f = $("restore").files[0];
+        if (!f) return;
+        const s = validate(JSON.parse(await f.text()));
+        if (!confirm("還原將取代目前全部資料，建議先下載備份。確定還原？"))
+          return;
+        await mutate("還原備份", () => {
+          state = { ...s, undo: state.undo || [] };
+        });
+      } catch (e) {
+        notify("還原失敗：" + e.message);
+      } finally {
+        $("restore").value = "";
+      }
+    };
+    $("undo").disabled = true;
+    $("undo").textContent = "多人共用版不提供整批撤回";
+    $("exportReport").onclick = () => {
+      const safe = (v) => {
+        let s = String(v);
+        if (/^[=+@\-\t\r]/.test(s)) s = "'" + s;
+        return '"' + s.replace(/"/g, '""') + '"';
+      };
+      download(
+        "缺件報表_" + $("reportDay").value + ".csv",
+        "\uFEFF" +
+          [["需補貨商品", "需補數量", "單位"], ...reportRows()]
+            .map((r) => r.map(safe).join(","))
+            .join("\r\n"),
+        "text/csv;charset=utf-8",
+      );
+    };
+
+    // ============================================================
+    // [功能畫面切換]
+    // ============================================================
+    function showView(view) {
+      const names = {
+        orders: "訂單比對",
+        report: "缺件報表",
+        inventory: "商品與庫存",
+        history: "操作紀錄",
+        settings: "備份與設定",
+      };
+      if (!names[view]) return;
+      for (const key of Object.keys(names)) {
+        $("panel_" + key).hidden = key !== view;
+        $("nav_" + key).className = key === view ? "active" : "";
+      }
+      $("viewTitle").textContent = names[view];
+      if (view === "report") renderReport();
+    }
+    document.addEventListener("click", (e) => {
+      const t = e.target.closest("[data-view]");
+      if (t) showView(t.dataset.view);
+    });
+    $("logs").onclick = () =>
+      notify(
+        "多人共用版保留操作歷程，不提供整批回溯刪除，避免撤回其他人的更新。測試請使用獨立資料庫。",
+      );
+    $("day").onchange = () => {
+      preview = null;
+      $("commit").disabled = true;
+      $("addUnknown").disabled = true;
+      $("commitReason").textContent = "備貨日已變更，請重新分析。";
+    };
+    window.addEventListener("unhandledrejection", (e) => {
+      e.preventDefault();
+      notify(e.reason?.message || "雲端操作未完成，請重新連線");
+    });
+    $("day").value = $("reportDay").value = today();
+    render();
+    // [自動連線啟動] 僅讀取既有資料，不自動初始化或寫入庫存。
+    void connectCloud();
+  </script>
+</html>
