@@ -46,66 +46,87 @@
         system-ui,
         sans-serif;
       display: grid;
-      grid-template-columns: 224px minmax(0, 1fr);
+      grid-template-columns: clamp(208px, 14vw, 250px) minmax(0, 1fr);
       grid-template-rows: auto 1fr;
       min-height: 100vh;
     }
 
-    /* 頁首 */
+    /* 頁首（精簡單列） */
     header {
       grid-column: 1 / -1;
-      background: linear-gradient(120deg, var(--navy), #135b66);
-      color: #fff;
-      padding: 18px 28px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      column-gap: 24px;
+      display: flex;
       align-items: center;
+      gap: 14px;
+      min-height: 58px;
+      padding: 0 24px;
+      background: linear-gradient(90deg, #14324a, #17505e);
+      color: #fff;
+      border-bottom: 3px solid var(--teal);
     }
     h1 {
       margin: 0;
-      font-size: 24px;
-      line-height: 1.4;
+      font-size: 18px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    h1::before {
+      content: "📦";
+      margin-right: 8px;
     }
     header > p {
-      margin: 4px 0 0;
-      color: #c9e0e6;
-      font-size: 14px;
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      padding-left: 14px;
+      border-left: 1px solid rgba(255, 255, 255, 0.25);
+      font-size: 13px;
+      color: #a9cbd3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .pill {
       display: inline-block;
       vertical-align: middle;
-      font-size: 12px;
+      margin-left: 6px;
+      font-size: 11px;
       font-weight: 600;
       background: #d4f0ee;
-      padding: 2px 9px;
+      padding: 1px 8px;
       border-radius: 99px;
     }
     .banner-tools {
-      grid-column: 2;
-      grid-row: 1 / 3;
-      text-align: right;
-      max-width: 380px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
     }
     #lastCompare {
-      font-size: 13px;
-      line-height: 1.7;
-      color: #d9e9f3;
+      order: 1;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #d3e6ee;
+      text-align: left;
     }
     .banner-tools button {
+      order: 2;
+      min-height: 34px;
+      padding: 4px 14px;
+      font-size: 13px;
+      margin: 0;
       background: rgba(255, 255, 255, 0.14);
       border-color: rgba(255, 255, 255, 0.4);
-      margin: 6px 0 2px;
     }
     .banner-tools button:hover:not(:disabled) {
       background: rgba(255, 255, 255, 0.26);
     }
     .banner-tools > small {
-      display: block;
+      order: 0;
+      max-width: 190px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      color: #bcd6dc;
+      color: #9fc2cc;
       font-size: 12px;
     }
 
@@ -176,9 +197,8 @@
       grid-row: 2;
       grid-column: 2;
       width: 100%;
-      max-width: 1240px;
       min-width: 0;
-      padding: 24px 28px 32px;
+      padding: 22px clamp(16px, 2.2vw, 44px) 32px;
     }
     #viewTitle {
       margin: 0 0 16px;
@@ -446,40 +466,45 @@
       font-size: 12px;
     }
 
-    /* 缺件報表 */
+    /* 缺件報表（清單式，方便截圖貼群組） */
+    #report {
+      max-width: 560px;
+      margin: 14px 0;
+      background: #fff;
+      border: 1px solid #cfd9e3;
+      border-radius: 14px;
+      overflow: hidden;
+    }
     .report-hero {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 20px;
+      gap: 12px;
+      padding: 16px 20px;
       background: linear-gradient(120deg, var(--navy), var(--teal));
       color: #fff;
-      border-radius: 14px;
-      padding: 24px 28px;
     }
     .eyebrow {
       font-size: 12px;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
       opacity: 0.85;
     }
     .report-hero h3 {
-      font-size: 28px;
-      margin: 6px 0;
+      font-size: 22px;
+      margin: 2px 0 0;
       padding: 0;
       border: 0;
     }
     .report-hero p {
-      margin: 0;
-      color: #d4e7eb;
-      font-size: 13px;
+      display: none;
     }
     .report-count {
       text-align: center;
-      min-width: 110px;
+      min-width: 90px;
     }
     .report-count strong {
       display: block;
-      font-size: 44px;
+      font-size: 34px;
       line-height: 1.1;
     }
     .report-count span {
@@ -489,8 +514,10 @@
       display: flex;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 10px;
-      padding: 16px 4px;
+      gap: 6px 12px;
+      padding: 10px 20px;
+      background: #f4f8fb;
+      border-bottom: 1px solid #e3eaf0;
       color: var(--mute);
       font-size: 13px;
     }
@@ -499,19 +526,22 @@
       margin-left: 6px;
     }
     .shortage-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 12px;
+      display: block;
     }
     .shortage-item {
-      display: flex;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
       align-items: center;
-      gap: 14px;
-      background: #fff;
-      border: 1px solid #e2e7ec;
-      border-left: 5px solid #d9604a;
-      border-radius: 10px;
-      padding: 16px 18px;
+      gap: 10px;
+      padding: 12px 20px 12px 16px;
+      border-left: 4px solid #d9604a;
+      border-bottom: 1px solid #edf1f5;
+    }
+    .shortage-item:nth-child(even) {
+      background: #fafcfd;
+    }
+    .shortage-item:last-child {
+      border-bottom: 0;
     }
     .item-number {
       color: #9aa9b6;
@@ -519,40 +549,33 @@
       font-variant-numeric: tabular-nums;
     }
     .shortage-name {
-      flex: 1;
       min-width: 0;
       overflow-wrap: anywhere;
     }
     .shortage-name strong {
       display: block;
+      font-size: 16px;
+      line-height: 1.45;
     }
     .shortage-name small {
-      display: inline-block;
-      color: #b34c35;
-      background: #fff0e9;
-      border-radius: 4px;
-      padding: 2px 7px;
-      margin-top: 6px;
-      font-size: 11px;
+      display: none;
     }
     .shortage-qty {
-      font-size: 30px;
+      font-size: 22px;
       font-weight: 700;
       color: #b34c35;
       white-space: nowrap;
     }
     .shortage-qty small {
       font-size: 13px;
-      font-weight: 400;
-      margin-left: 5px;
+      font-weight: 500;
+      margin-left: 4px;
       color: #6a7c90;
     }
     .report-empty {
       text-align: center;
-      padding: 44px 15px;
+      padding: 36px 15px;
       background: #f4faf8;
-      border: 1px dashed #bdddd3;
-      border-radius: 10px;
     }
     .report-empty strong {
       color: #237d68;
@@ -560,6 +583,7 @@
     }
     .report-empty p {
       color: var(--mute);
+      margin-bottom: 0;
     }
 
     /* 彈窗 */
@@ -596,21 +620,313 @@
       margin: 0;
     }
 
+    section > p,
+    .muted {
+      max-width: 980px;
+    }
+    @media (min-width: 1700px) {
+      body {
+        font-size: 16px;
+      }
+    }
+
+    /* 訂單比對：以 CSS order 重排（不改 HTML 與邏輯） */
+    #panel_orders:not([hidden]) {
+      display: flex;
+      flex-direction: column;
+    }
+    #panel_orders > h2 {
+      order: 0;
+    }
+    #panel_orders > p {
+      order: 1;
+    }
+    #panel_orders > .row {
+      order: 2;
+      background: #f5f9fb;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    #panel_orders > details {
+      order: 3;
+    }
+    #panel_orders > #commitReason {
+      order: 4;
+      margin-top: 2px;
+    }
+    #panel_orders > #previewResult {
+      order: 5;
+    }
+    #commit {
+      font-size: 16px;
+    }
+    @media (min-width: 761px) {
+      #panel_orders > .row {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 12px;
+        align-items: end;
+        padding: 16px;
+      }
+      #panel_orders > .row > * {
+        margin: 0;
+        min-width: 0;
+      }
+      #panel_orders > .row > label {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #53667a;
+      }
+      #ordersFile {
+        grid-column: span 6;
+      }
+      #panel_orders > .row > label:nth-child(2) {
+        grid-column: span 2;
+      }
+      #panel_orders > .row > label:nth-child(3) {
+        grid-column: span 4;
+      }
+      #preview,
+      #refreshPreview,
+      #addUnknown {
+        grid-column: span 4;
+      }
+      #commit {
+        grid-column: 1 / -1;
+        min-height: 50px;
+      }
+    }
+    @media (min-width: 761px) and (max-width: 1000px) {
+      #ordersFile {
+        grid-column: span 12;
+      }
+      #panel_orders > .row > label:nth-child(2),
+      #panel_orders > .row > label:nth-child(3),
+      #preview,
+      #refreshPreview {
+        grid-column: span 6;
+      }
+      #addUnknown {
+        grid-column: span 12;
+      }
+    }
+
+    /* 商品與庫存：桌面改為卡片格狀，縮短頁面長度 */
+    #databaseURL {
+      display: block;
+      width: 100% !important;
+      margin-bottom: 8px;
+    }
+    @media (min-width: 761px) {
+      #products table,
+      #products tbody {
+        display: block;
+        width: 100%;
+      }
+      #products thead {
+        display: none;
+      }
+      #products tbody {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 14px;
+      }
+      #products tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 14px;
+        align-content: start;
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px #14324a0d;
+      }
+      #products td {
+        display: block;
+        min-width: 0 !important;
+        padding: 0;
+        border: 0;
+      }
+      #products tbody tr:hover td {
+        background: none;
+      }
+      #products td:first-child {
+        grid-column: 1 / -1;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      #products td:first-child button {
+        margin: 6px 0 0;
+        min-height: 36px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      #products td:nth-child(2)::before,
+      #products td:nth-child(3)::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 3px;
+        color: var(--mute);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      #products td:nth-child(2) select {
+        width: 100%;
+      }
+      #products td:nth-child(3) {
+        font-size: 17px;
+        font-weight: 700;
+      }
+      #products td:last-child {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px dashed #e4eaf0;
+      }
+      #products td:last-child input {
+        flex: 1 1 90px;
+        width: auto;
+      }
+      #products td:last-child button {
+        flex: 0 0 auto;
+        margin: 0;
+      }
+      #search {
+        display: inline-block;
+        width: 260px;
+        margin: 4px 0 4px 6px;
+        vertical-align: middle;
+      }
+    }
+
+    /* 備份與設定：分成兩張有標題的卡片 */
+    #panel_settings:not([hidden]) {
+      display: grid;
+      gap: 18px;
+      align-items: start;
+    }
+    @media (min-width: 1100px) {
+      #panel_settings:not([hidden]) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    .settings-cloud,
+    .settings-backup {
+      min-width: 0;
+      margin: 0;
+      padding: 0 20px 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .settings-cloud > h2,
+    .settings-backup > h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 -20px 16px;
+      padding: 12px 20px;
+      font-size: 18px;
+      background: #f1f6f9;
+      border-bottom: 1px solid var(--line);
+      border-radius: 11px 11px 0 0;
+    }
+    .settings-cloud > h2::before {
+      content: "☁️";
+    }
+    .settings-backup > h2::before {
+      content: "💾";
+    }
+    .backup-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .backup-item {
+      padding: 12px 14px;
+      background: #fafcfd;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .backup-item.caution {
+      background: #fffaf0;
+      border-color: #f0d9a8;
+    }
+    .backup-item p {
+      margin: 2px 0 8px;
+      font-size: 13px;
+    }
+    .backup-item label {
+      margin: 0;
+    }
+
+    /* 操作紀錄：防誤觸鎖 */
+    .lock-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+      padding: 36px 16px;
+      text-align: center;
+      background: #f7f9fb;
+      border: 2px dashed var(--field);
+      border-radius: 12px;
+    }
+    .lock-icon {
+      font-size: 36px;
+      line-height: 1;
+    }
+    .lock-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+      padding: 8px 12px;
+      font-size: 13px;
+      background: #fff6dc;
+      border-radius: 8px;
+    }
+    .lock-bar button {
+      margin: 0;
+      min-height: 36px;
+    }
+    #panel_history.locked #logs {
+      display: none;
+    }
+    #panel_history:not(.locked) .lock-box {
+      display: none;
+    }
+    #panel_history:not(.locked) .lock-bar {
+      display: flex;
+    }
+
     /* 平板：選單改為頂部橫列 */
     @media (max-width: 1000px) {
       body {
         display: block;
       }
       header {
-        padding: 16px 20px;
-        grid-template-columns: 1fr;
+        flex-wrap: wrap;
+        gap: 6px 12px;
+        min-height: 0;
+        padding: 8px 16px;
+      }
+      header > p {
+        display: none;
       }
       .banner-tools {
-        grid-column: 1;
-        grid-row: auto;
-        text-align: left;
-        max-width: none;
-        margin-top: 10px;
+        margin-left: auto;
       }
       .sidebar {
         position: sticky;
@@ -643,33 +959,32 @@
     /* 手機：底部導覽、單欄操作、表格轉卡片 */
     @media (max-width: 760px) {
       header {
-        padding: 16px;
+        padding: 10px 14px;
+        gap: 6px 10px;
       }
       h1 {
-        font-size: 20px;
-      }
-      header > p {
-        font-size: 12px;
+        flex: 1;
+        font-size: 17px;
+        white-space: normal;
       }
       .banner-tools {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-      }
-      #lastCompare {
-        width: 100%;
-        font-size: 12px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 8px 12px;
+        display: contents;
       }
       .banner-tools button {
-        margin: 0;
+        order: 1;
+        min-height: 40px;
+      }
+      #lastCompare {
+        order: 2;
+        flex: 1 1 100%;
+        font-size: 11.5px;
+        white-space: normal !important;
       }
       .banner-tools > small {
-        flex: 1;
-        min-width: 0;
+        order: 3;
+        flex: 1 1 100%;
+        max-width: none;
+        font-size: 11px;
       }
       .sidebar {
         position: fixed;
@@ -885,32 +1200,29 @@
         max-height: 50vh;
         font-size: 14px;
       }
+      #report {
+        max-width: none;
+      }
       .report-hero {
-        padding: 18px 16px;
-        gap: 12px;
+        padding: 14px;
       }
       .report-hero h3 {
-        font-size: 23px;
-      }
-      .report-count {
-        min-width: 80px;
+        font-size: 20px;
       }
       .report-count strong {
-        font-size: 36px;
+        font-size: 30px;
       }
       .report-summary {
         flex-direction: column;
-        gap: 6px;
-      }
-      .shortage-list {
-        grid-template-columns: 1fr;
+        padding: 10px 14px;
       }
       .shortage-item {
-        gap: 10px;
-        padding: 14px 12px;
+        grid-template-columns: 24px minmax(0, 1fr) auto;
+        gap: 8px;
+        padding: 11px 12px 11px 10px;
       }
       .shortage-qty {
-        font-size: 28px;
+        font-size: 21px;
       }
       footer {
         font-size: 12px;
@@ -958,6 +1270,8 @@
           開啟網頁會預填公司資料庫網址並自動連線；若連線失敗，可按右上角「更新雲端資料」重試。
         </p>
       </div>
+      <div class="settings-backup">
+        <h2>備份與還原</h2>
       <div class="warn">
         首次使用請先核對商品狀態與庫存。預載列管狀態尚待你確認；缺件按所選備貨日統計，不累加前日欠件。數量基準為11/6更新後，請勿將先前已扣過的訂單重新入帳。未建立對照的商品必須確認，才可套用。
       </div>
@@ -967,9 +1281,12 @@
       <p>
         資料共用於Firebase，請定期下載備份。換電腦開啟此網站，也會自動連線並讀取共用資料。
       </p>
-      <button id="backup">下載完整備份</button
-      ><label>還原備份 <input type="file" id="restore" accept=".json" /></label
-      ><button id="undo" class="secondary">撤回最後一次操作</button>
+              <div class="backup-grid">
+          <div class="backup-item"><strong>① 下載備份</strong><p class="muted">把目前所有資料存成檔案，建議每日下載一次。</p><button id="backup">下載完整備份</button></div>
+          <div class="backup-item caution"><strong>② 還原備份</strong><p class="muted">選擇備份檔後會取代目前全部資料，操作前請先確認。</p><label>還原備份 <input type="file" id="restore" accept=".json" /></label></div>
+          <div class="backup-item caution"><strong>③ 撤回操作</strong><p class="muted">撤回最近一次操作，請謹慎使用。</p><button id="undo" class="secondary">撤回最後一次操作</button></div>
+        </div>
+      </div>
     </section>
 
     <!-- [商品與庫存] -->
@@ -1030,11 +1347,21 @@
         <div id="entries" class="scroll"></div>
       </details>
     </section>
-    <section id="panel_history" class="panel" hidden>
+    <section id="panel_history" class="panel locked" hidden>
       <h2>操作紀錄</h2>
       <p>
         多人共用版保留操作歷程，不提供整批回溯刪除。測試資料請放獨立Firebase測試專案，避免影響正式共用資料。
       </p>
+      <div id="logLock" class="lock-box">
+        <div class="lock-icon">🔒</div>
+        <strong>操作紀錄已鎖定</strong>
+        <small>為避免誤觸刪除紀錄，請先解鎖才能查看與操作。</small>
+        <button id="unlockLogs">解鎖操作紀錄</button>
+      </div>
+      <div class="lock-bar">
+        <span>🔓 已解鎖：切換到其他頁面會自動重新上鎖</span>
+        <button id="relockLogs" class="secondary">立即上鎖</button>
+      </div>
       <div id="logs"></div>
     </section>
     <footer>需連線使用・訂單資料存於Firebase・包裝數字不等於訂購數量</footer>
@@ -2519,5 +2846,27 @@
     render();
     // [自動連線啟動] 僅讀取既有資料，不自動初始化或寫入庫存。
     void connectCloud();
+  </script>
+  <script>
+    // [操作紀錄鎖] 僅防誤觸；獨立於主程式，不影響任何運作邏輯。
+    (function () {
+      "use strict";
+      // 若想改成輸入密碼才能解鎖，把密碼填在下面引號內（留空＝只需按確認）
+      const UNLOCK_PIN = "";
+      const panel = document.getElementById("panel_history");
+      const lock = () => panel.classList.add("locked");
+      document.getElementById("unlockLogs").onclick = () => {
+        if (UNLOCK_PIN) {
+          const v = prompt("請輸入解鎖密碼");
+          if (v === null) return;
+          if (v !== UNLOCK_PIN) return alert("密碼不正確");
+        } else if (!confirm("解鎖後可刪除紀錄並還原資料，確定要解鎖嗎？")) return;
+        panel.classList.remove("locked");
+      };
+      document.getElementById("relockLogs").onclick = lock;
+      document.addEventListener("click", (e) => {
+        if (e.target.closest("[data-view]")) lock();
+      });
+    })();
   </script>
 </html>
