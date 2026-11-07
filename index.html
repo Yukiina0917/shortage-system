@@ -56,9 +56,10 @@
       grid-column: 1 / -1;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 6px 14px;
+      flex-wrap: wrap;
       min-height: 58px;
-      padding: 0 24px;
+      padding: 6px 24px;
       background: linear-gradient(90deg, #14324a, #17505e);
       color: #fff;
       border-bottom: 3px solid var(--teal);
@@ -82,8 +83,11 @@
       font-size: 13px;
       color: #a9cbd3;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+    @media (max-width: 1399px) {
+      header > p {
+        display: none;
+      }
     }
     .pill {
       display: inline-block;
@@ -122,10 +126,7 @@
     }
     .banner-tools > small {
       order: 0;
-      max-width: 190px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       color: #9fc2cc;
       font-size: 12px;
     }
@@ -911,6 +912,222 @@
       display: flex;
     }
 
+    /* ===== 第三版：標題列、左右分欄、庫存固定上半部 ===== */
+    .view-head {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      margin-bottom: 16px;
+    }
+    .view-head #viewTitle {
+      margin: 0;
+      white-space: nowrap;
+    }
+    #inventoryHint {
+      display: none;
+      flex: 1 1 360px;
+      min-width: 0;
+      margin: 0;
+      color: var(--mute);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+    main:has(#panel_inventory:not([hidden])) #inventoryHint {
+      display: block;
+    }
+    @media (min-width: 1300px) {
+      #inventoryHint {
+        flex: 1 1 0;
+        white-space: nowrap;
+        font-size: clamp(12px, 0.8vw, 14px);
+      }
+    }
+
+    /* 預覽結果卡片 */
+    #previewResult {
+      min-width: 0;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    #previewResult:empty {
+      display: none;
+    }
+
+    /* 報表：控制列 */
+    .report-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .report-controls > * {
+      margin: 0;
+    }
+
+    /* 商品卡片：名稱／單位／編輯別名排成一列 */
+    @media (min-width: 761px) {
+      #products td:first-child br {
+        display: none;
+      }
+      #products td:first-child small {
+        display: inline-block;
+        margin: 0 8px;
+        padding: 1px 9px;
+        font-size: 12px;
+        background: #eef3f7;
+        border-radius: 99px;
+        vertical-align: middle;
+      }
+      #products td:first-child button {
+        margin: 0;
+        min-height: 34px;
+        vertical-align: middle;
+      }
+      #products td:last-child input {
+        flex: 1 1 80px;
+        width: 0;
+        min-width: 70px;
+      }
+    }
+
+    /* 寬螢幕（≥1100px）：訂單比對、缺件報表左右分欄 */
+    @media (min-width: 1100px) {
+      #panel_orders:not([hidden]) {
+        display: grid;
+        grid-template-columns: clamp(380px, 34%, 520px) minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto auto 1fr;
+        column-gap: 24px;
+        row-gap: 12px;
+        align-items: start;
+      }
+      #panel_orders > h2,
+      #panel_orders > p {
+        grid-column: 1 / -1;
+        margin: 0;
+      }
+      #panel_orders > .row {
+        grid-column: 1;
+        grid-row: 3;
+      }
+      #panel_orders > details {
+        grid-column: 1;
+        grid-row: 4;
+        margin: 0;
+      }
+      #panel_orders > #commitReason {
+        grid-column: 1;
+        grid-row: 5;
+        margin: 0;
+      }
+      #panel_orders > #previewResult {
+        grid-column: 2;
+        grid-row: 3 / 7;
+      }
+      #previewResult:empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 260px;
+        padding: 40px 16px;
+        color: var(--mute);
+        background: #f7f9fb;
+        border: 2px dashed var(--field);
+      }
+      #previewResult:empty::before {
+        content: "📋 分析後的訂單預覽會顯示在這裡";
+      }
+      #ordersFile {
+        grid-column: span 12;
+      }
+      #panel_orders > .row > label:nth-child(2) {
+        grid-column: span 5;
+      }
+      #panel_orders > .row > label:nth-child(3) {
+        grid-column: span 7;
+      }
+      #preview,
+      #refreshPreview {
+        grid-column: span 6;
+      }
+      #addUnknown {
+        grid-column: span 12;
+      }
+
+      #panel_report:not([hidden]) {
+        display: grid;
+        grid-template-columns: minmax(340px, 560px) minmax(0, 1fr);
+        grid-template-rows: auto auto auto 1fr;
+        column-gap: 28px;
+        align-items: start;
+      }
+      #panel_report > h2 {
+        grid-column: 1 / -1;
+      }
+      #panel_report > .report-controls {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      #panel_report > #report {
+        grid-column: 1;
+        grid-row: 3;
+        width: 100%;
+        margin: 14px 0 0;
+      }
+      #panel_report > details {
+        grid-column: 2;
+        grid-row: 2 / 5;
+        margin: 0;
+      }
+    }
+
+    /* 桌面「商品與庫存」：上半部固定，只有商品清單捲動 */
+    @media (min-width: 1001px) {
+      body:has(#panel_inventory:not([hidden])) {
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+      }
+      body:has(#panel_inventory:not([hidden])) .sidebar {
+        position: static;
+        height: auto;
+        align-self: stretch;
+      }
+      main:has(#panel_inventory:not([hidden])) {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        padding-bottom: 16px;
+      }
+      main:has(#panel_inventory:not([hidden])) footer {
+        display: none;
+      }
+      main:has(#panel_inventory:not([hidden])) #panel_inventory {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0;
+      }
+      #inventoryPanel {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+      #inventoryPanel #products {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        margin-top: 4px;
+        padding: 4px 6px 4px 0;
+        scrollbar-width: thin;
+      }
+    }
+
     /* 平板：選單改為頂部橫列 */
     @media (max-width: 1000px) {
       body {
@@ -985,6 +1202,7 @@
         flex: 1 1 100%;
         max-width: none;
         font-size: 11px;
+        white-space: normal;
       }
       .sidebar {
         position: fixed;
@@ -1251,7 +1469,10 @@
     ><small>雲端共用<br />建議每日下載備份</small>
   </nav>
   <main>
-    <h2 id="viewTitle">訂單比對</h2>
+    <div class="view-head">
+      <h2 id="viewTitle">訂單比對</h2>
+      <p id="inventoryHint">「設定剩餘」直接覆蓋現有數量；「增加進貨」加到現有數量。庫存充足不計數，缺貨列管則從0開始計算。每日缺件當日補齊；多買的剩餘量請在此登記。</p>
+    </div>
     <div id="notice" role="status"></div>
 
     <!-- [備份與設定] -->
@@ -1292,10 +1513,7 @@
     <!-- [商品與庫存] -->
     <section id="panel_inventory" class="panel" hidden>
       <div id="inventoryPanel">
-        <h2>商品與庫存</h2>
-        <p class="muted">
-          「設定剩餘」直接覆蓋現有數量；「增加進貨」加到現有數量。庫存充足不計數，缺貨列管則從0開始計算。每日缺件當日補齊；多買的剩餘量請在此登記。
-        </p>
+        
         <button id="openProductDialog">＋ 新增商品／批次設定剩餘量</button
         ><label
           ><input type="checkbox" id="showArchived" /> 顯示已封存商品</label
@@ -1339,8 +1557,8 @@
     <!-- [缺件報表] -->
     <section id="panel_report" class="panel" hidden>
       <h2>當日需補貨</h2>
-      <label>報表備貨日 <input id="reportDay" type="date" /></label
-      ><button id="exportReport">匯出CSV</button>
+      <div class="report-controls"><label>報表備貨日 <input id="reportDay" type="date" /></label
+      ><button id="exportReport">匯出CSV</button></div>
       <div id="report" class="scroll"></div>
       <details>
         <summary>訂單入帳明細</summary>
@@ -2867,6 +3085,15 @@
       document.addEventListener("click", (e) => {
         if (e.target.closest("[data-view]")) lock();
       });
+    })();
+    // [版面] 寬螢幕時自動展開「訂單入帳明細」，手機維持收合
+    (function () {
+      "use strict";
+      const d = document.querySelector("#panel_report details");
+      const mq = window.matchMedia("(min-width: 1100px)");
+      const sync = () => { d.open = mq.matches; };
+      sync();
+      if (mq.addEventListener) mq.addEventListener("change", sync);
     })();
   </script>
 </html>
