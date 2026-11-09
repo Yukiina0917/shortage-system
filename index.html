@@ -2075,11 +2075,27 @@
     function product(id) {
       return state.products.find((p) => p.id === id);
     }
+    // 只忽略獨立的單位尾註；保留顏色、口味、容量、入數等規格。
+    function unitSuffix(name) {
+      const text = String(name).normalize("NFKC").trim();
+      const suffix = text.match(/\(\s*(箱|盒|包|袋|瓶|罐|組|件|個|支)\s*\)$/);
+      return { key: norm(suffix ? text.slice(0, suffix.index) : text),
+        unit: suffix?.[1] || "" };
+    }
     function match(name) {
       const n = norm(name);
-      return state.products.filter(
-        (p) => !p.archived && p.aliases.some((a) => norm(a) === n),
+      const exact = state.products.filter(
+        (p) => p.aliases.some((a) => norm(a) === n),
       );
+      if (exact.length) return exact.filter((p) => !p.archived);
+      const source = unitSuffix(name);
+      const candidates = state.products.filter((p) =>
+        [p.name, ...p.aliases].some((a) => unitSuffix(a).key === source.key),
+      );
+      if (candidates.length !== 1 || candidates[0].archived) return [];
+      const p = candidates[0];
+      if (source.unit && source.unit !== p.unit) return [];
+      return [p];
     }
     // 包裝文字只用於提出候選，不會自動扣到其他規格。
     function suggestionKey(name) {
@@ -2091,7 +2107,7 @@
     function suggestedProducts(name) {
       const key = suggestionKey(name);
       return key.length < 4 ? [] : state.products.filter((p) =>
-        [p.name, ...p.aliases].some((a) => suggestionKey(a) === key),
+        [p.name, ...p.aliases].some((a) => suggestionKey(a) === key || unitSuffix(a).key === unitSuffix(name).key),
       );
     }
     function canBatchApprove(x) {
