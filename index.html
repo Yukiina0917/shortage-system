@@ -2444,6 +2444,14 @@
       const name = value.normalize("NFKC").trim();
       return /^溫層(?:\s*\(|\s*$)/.test(name) ? "溫層" : name;
     }
+    // Excel 預填欄位不代表有訂單。只略過其餘欄位均空白的模板列。
+    function isTemplateRow(row, headers) {
+      return row.every((cell, i) => {
+        if (!cell.trim()) return true;
+        const header = headers[i] || "";
+        return /^(序號|規格(?:\s*\(.*)?|溫層|時段|接單日|到貨日|\d{4}-一般食品)$/s.test(header);
+      });
+    }
     function parseOrders(text, day) {
       const rows = parseDelimited(
         text.replace(/^\uFEFF/, ""),
@@ -2464,7 +2472,7 @@
         orders = [],
         seen = new Set();
       rows.forEach((r, i) => {
-        if (r.every((cell) => !cell.trim())) return;
+        if (isTemplateRow(r, h)) return;
         const d = dateNorm(r[idx("備貨日")]);
         if (!d) {
           errors.push("資料列" + (i + 1) + "：備貨日格式無法辨識");
@@ -2563,6 +2571,7 @@
       const tokens = [],
         days = new Set();
       for (const r of rows) {
+        if (isTemplateRow(r, h)) continue;
         const day = dateNorm(r[ix]);
         if (!day)
           throw Error("有訂單的「接單日」空白或格式無法辨識，請使用YYYY/MM/DD");
