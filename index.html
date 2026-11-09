@@ -2081,6 +2081,22 @@
         (p) => !p.archived && p.aliases.some((a) => norm(a) === n),
       );
     }
+    // 包裝文字只用於提出候選，不會自動扣到其他規格。
+    function suggestionKey(name) {
+      return norm(String(name).normalize("NFKC").replace(
+        /(?:\(\s*(?:(?:\d+(?:\.\d+)?\s*(?:入|罐|包|袋|瓶|盒|kg|g|ml)\s*\/\s*)?(?:箱|盒|包|袋|瓶|罐|組|件)|\d+\s*入)\s*\))+$/i,
+        "",
+      ));
+    }
+    function suggestedProducts(name) {
+      const key = suggestionKey(name);
+      return key.length < 4 ? [] : state.products.filter((p) =>
+        [p.name, ...p.aliases].some((a) => suggestionKey(a) === key),
+      );
+    }
+    function canBatchApprove(x) {
+      return !x.matches.length && !suggestedProducts(x.name).length;
+    }
     function validQty(v, zero = true) {
       if (String(v).trim() === "" || !/^\d+$/.test(String(v).trim()))
         throw Error("請輸入整數數量");
@@ -2424,13 +2440,18 @@
       if (!m) return "";
       return m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0");
     }
+    function orderHeader(value) {
+      const name = value.normalize("NFKC").trim();
+      return /^溫層(?:\s*\(|\s*$)/.test(name) ? "溫層" : name;
+    }
     function parseOrders(text, day) {
       const rows = parseDelimited(
         text.replace(/^\uFEFF/, ""),
         text.includes("\t") ? "\t" : ",",
       );
       if (rows.length < 2) throw Error("沒有可解析的訂單");
-      const h = rows.shift().map((x) => x.trim());
+      const rawHeaders = rows.shift();
+      const h = rawHeaders.map(orderHeader);
       const idx = (k) => h.indexOf(k);
       for (const k of ["訂單編號", "品名", "備貨日"])
         if (idx(k) < 0) throw Error("缺少欄位：" + k);
@@ -2443,6 +2464,7 @@
         orders = [],
         seen = new Set();
       rows.forEach((r, i) => {
+        if (r.every((cell) => !cell.trim())) return;
         const d = dateNorm(r[idx("備貨日")]);
         if (!d) {
           errors.push("資料列" + (i + 1) + "：備貨日格式無法辨識");
@@ -2454,8 +2476,8 @@
         }
         const order = r[idx("訂單編號")]?.trim(),
           raw = r[idx("品名")]?.trim(),
-          platform = idx("接單管道") >= 0 ? r[idx("接單管道")].trim() : "";
-        const serial = idx("序號") >= 0 ? r[idx("序號")].trim() : "";
+          platform = idx("接單管道") >= 0 ? (r[idx("接單管道")] || "").trim() : "";
+        const serial = idx("序號") >= 0 ? (r[idx("序號")] || "").trim() : "";
         const key = JSON.stringify([platform, order, serial]);
         try {
           if (!order || !raw) throw Error("缺訂單編號或品名");
@@ -2466,7 +2488,12 @@
           const fingerprint = JSON.stringify([d, raw, r[idx("溫層")] || ""]);
           const existing = state.entries.find((e) => e.key === key);
           if (existing) {
-            if (existing.fingerprint !== fingerprint)
+            const legacyFingerprint = JSON.stringify([d, raw, ""]);
+            const legacyTemp = idx("溫層") >= 0 &&
+              rawHeaders[idx("溫層")].trim() !== "溫層" &&
+              !rawHeaders.some((header) => header.trim() === "溫層");
+            if (existing.fingerprint !== fingerprint &&
+                !(legacyTemp && existing.fingerprint === legacyFingerprint))
               throw Error("已入帳訂單有異動，請先確認原紀錄，禁止再次扣庫存");
             orders.push({ key, duplicate: true, order, raw });
             return;
@@ -2529,7 +2556,7 @@
         text.replace(/^\uFEFF/, ""),
         text.includes("\t") ? "\t" : ",",
       );
-      const h = rows.shift()?.map((x) => x.trim()) || [],
+      const h = rows.shift()?.map(orderHeader) || [],
         ix = h.indexOf("接單日");
       if (ix < 0)
         throw Error("缺少「接單日」欄位，無法記錄與檢查接單日，請補上後匯入");
@@ -2650,7 +2677,7 @@
       t = String(t ?? "").trim();
       return t === "1" || t === "常溫"
         ? "1"
-        : t === "3" || t === "冷凍"
+        : t === "3" || t === "冷凍" || t === "低溫"
           ? "3"
           : t === "2" || t === "冷藏"
             ? "2"
@@ -2701,7 +2728,7 @@
     }
     function renderPreview() {
       const p = preview;
-      let unresolved = 0;
+      const unresolvedNames = new Set();
       for (const o of p.orders)
         if (!o.duplicate)
           for (const x of o.items)
@@ -2709,7 +2736,8 @@
               x.matches.length !== 1 ||
               product(x.matches[0].id).mode === "pending"
             )
-              unresolved++;
+              unresolvedNames.add(norm(x.name));
+      const unresolved = unresolvedNames.size;
       $("commit").disabled = !!(
         p.errors.length ||
         unresolved ||
@@ -2730,7 +2758,7 @@
         ? "尚不能套用：" + reasons.join("；")
         : "核對完成，可以套用本次訂單。";
       $("addUnknown").disabled = !p.orders.some(
-        (o) => !o.duplicate && o.items.some((x) => x.matches.length === 0),
+        (o) => !o.duplicate && o.items.some(canBatchApprove),
       );
       const grouped = aggregatePreview(p);
       let html =
@@ -2744,9 +2772,19 @@
         p.excluded +
         ' 列</p><p class="muted">今日總量＝當日已入帳需求＋本次新增需求，重複訂單不重算。相同商品名稱對照後合併，依溫層分區。</p>' +
         p.errors.map((e) => '<p class="red">' + esc(e) + "</p>").join("");
+      const knownOrders = p.orders.filter((o) => !o.duplicate).map((o) => ({
+        ...o, items: o.items.filter((x) => x.matches.length === 1 &&
+          product(x.matches[0].id).mode !== "pending"),
+      }));
+      const shortages = simulate({ orders: knownOrders }).summary.filter((g) => g.short);
+      html += "<h3>本次新增缺件預估</h3>" +
+        (unresolved || p.errors.length ? '<p class="muted">僅計入已確認且可解析的品項，待確認完成後會重算。</p>' : "") +
+        (shortages.length ? table(["商品", "需補貨"], shortages.map((g) =>
+          [esc(g.name), g.short + " " + esc(g.unit)])) : "<p>目前已確認品項無新增缺件。</p>");
+      const shownUnknown = new Set();
       for (const [temp, title] of [
         ["1", "常溫商品"],
-        ["3", "冷凍商品"],
+        ["3", "低溫商品"],
         ["2", "冷藏商品"],
         ["unknown", "溫層未註明／待確認"],
       ]) {
@@ -2754,18 +2792,34 @@
           .filter((g) => g.temp === temp)
           .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
         if (!rows.length) continue;
-        html +=
-          "<h3>" +
-          title +
-          '</h3><div class="scroll">' +
+        for (const pending of [true, false]) {
+        const visible = rows.filter((g) => {
+          if (!!g.id === pending) return false;
+          if (g.id) return true;
+          const key = norm(g.name);
+          if (shownUnknown.has(key)) return false;
+          shownUnknown.add(key);
+          return true;
+        }).map((g) => !g.id ? {
+          ...g,
+          total: grouped.filter((a) => !a.id && norm(a.name) === norm(g.name))
+            .reduce((n, a) => n + a.total, 0),
+          fresh: grouped.filter((a) => !a.id && norm(a.name) === norm(g.name))
+            .reduce((n, a) => n + a.fresh, 0),
+        } : g);
+        if (!visible.length) continue;
+        html += (pending ? "<h3>待確認：" + title + "</h3>" :
+          "<details><summary>查看已對照：" + title + "（" + visible.length + " 項）</summary>") +
+          '<div class="scroll">' +
           table(
             ["商品", "今日總量", "單位", "本次新增", "狀態／名稱對照"],
-            rows.map((g) => {
+            visible.map((g) => {
               const q = g.id ? product(g.id) : null;
               const status = q
                 ? esc(modes[q.mode])
                 : '<span class="red">未建檔，請選對照或確認庫存充足</span>';
-              const select = g.ref
+              const candidates = q ? [] : suggestedProducts(g.name);
+              const select = !q && g.ref
                 ? '<br><select data-oi="' +
                   g.ref.oi +
                   '" data-xi="' +
@@ -2773,12 +2827,13 @@
                   '"><option value="">修正名稱對照</option>' +
                   state.products
                     .filter((q) => !q.archived)
+                    .sort((a, b) => Number(candidates.includes(b)) - Number(candidates.includes(a)))
                     .map(
                       (q) =>
                         '<option value="' +
                         q.id +
                         '">' +
-                        esc(q.name) +
+                        (candidates.includes(q) ? "建議： " : "") + esc(q.name) +
                         "</option>",
                     )
                     .join("") +
@@ -2793,7 +2848,8 @@
               ];
             }),
           ) +
-          "</div>";
+          "</div>" + (pending ? "" : "</details>");
+        }
       }
       if (!$("commit").disabled) {
         const sim = simulate(p);
@@ -2903,7 +2959,7 @@
           preview.orders
             .filter((o) => !o.duplicate)
             .flatMap((o) =>
-              o.items.filter((x) => x.matches.length === 0).map((x) => x.name),
+              o.items.filter(canBatchApprove).map((x) => x.name),
             ),
         ),
       ];
@@ -2912,7 +2968,7 @@
         !confirm(
           "以下 " +
             names.length +
-            " 款未建檔商品將設為「庫存充足」，不報缺件。請確認其中沒有列管商品的不同名稱！\n\n" +
+            " 款未建檔商品將設為「庫存充足」，不報缺件。有疑似對照的品項不會一併設定。\n\n" +
             names.join("\n"),
         )
       )
