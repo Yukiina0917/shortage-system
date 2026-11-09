@@ -1508,6 +1508,7 @@
           <div class="backup-item caution"><strong>③ 撤回操作</strong><p class="muted">撤回最近一次操作，請謹慎使用。</p><button id="undo" class="secondary">撤回最後一次操作</button></div>
         </div>
       </div>
+      <p class="muted">一吉晟股份有限公司 ® 2026</p>
     </section>
 
     <!-- [商品與庫存] -->
@@ -1568,12 +1569,12 @@
     <section id="panel_history" class="panel locked" hidden>
       <h2>操作紀錄</h2>
       <p>
-        多人共用版保留操作歷程，不提供整批回溯刪除。測試資料請放獨立Firebase測試專案，避免影響正式共用資料。
+        刪除只會移除所選紀錄，不會還原庫存或訂單。測試資料請放獨立Firebase測試專案，避免影響正式共用資料。
       </p>
       <div id="logLock" class="lock-box">
         <div class="lock-icon">🔒</div>
         <strong>操作紀錄已鎖定</strong>
-        <small>為避免誤觸刪除紀錄，請先解鎖才能查看與操作。</small>
+        <small>請先解鎖以查看操作紀錄。</small>
         <button id="unlockLogs">解鎖操作紀錄</button>
       </div>
       <div class="lock-bar">
@@ -1945,7 +1946,7 @@
     // ============================================================
     // [雲端儲存與版本衝突檢查]
     // ============================================================
-    async function mutate(label, fn) {
+    async function mutate(label, fn, { recordLog = true } = {}) {
       if (!cloudReady || cloudBusy) {
         notify("請先連線雲端，或等待上次操作完成");
         throw Error("雲端尚未就緒");
@@ -1962,10 +1963,12 @@
           );
         }
         fn();
-        state.logs.push({
-          at: new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }),
-          label,
-        });
+        if (recordLog) {
+          state.logs.push({
+            at: new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }),
+            label,
+          });
+        }
         state.undo = [];
         validate(state);
         const candidate = JSON.parse(JSON.stringify(state));
@@ -2101,16 +2104,14 @@
           ]),
       );
       $("logs").innerHTML = table(
-        ["時間", "操作內容", "刪除與還原"],
+        ["時間", "操作內容", "操作"],
         state.logs
           .map((l, i) => [
             esc(l.at),
             esc(l.label),
-            i >= state.logs.length - (state.undo || []).length
-              ? '<button class="danger" data-delete-log="' +
-                i +
-                '">刪除紀錄並還原資料</button>'
-              : "<small>雲端歷程保留</small>",
+            '<button type="button" class="danger" data-delete-log="' +
+              i +
+              '">刪除此紀錄</button>',
           ])
           .reverse(),
       );
@@ -3046,10 +3047,24 @@
       const t = e.target.closest("[data-view]");
       if (t) showView(t.dataset.view);
     });
-    $("logs").onclick = () =>
-      notify(
-        "多人共用版保留操作歷程，不提供整批回溯刪除，避免撤回其他人的更新。測試請使用獨立資料庫。",
-      );
+    $("logs").onclick = async (e) => {
+      const button = e.target.closest("button[data-delete-log]");
+      if (!button || $("panel_history").classList.contains("locked")) return;
+      const index = Number(button.dataset.deleteLog);
+      const log = state.logs[index];
+      if (!log) return;
+      if (!confirm(
+        "確定刪除這筆操作紀錄？\n" + log.at + "｜" + log.label +
+        "\n\n庫存、訂單和缺件資料不會還原。"
+      )) return;
+      try {
+        await mutate("已刪除所選操作紀錄", () => {
+          state.logs.splice(index, 1);
+        }, { recordLog: false });
+      } catch {
+        // mutate 已顯示雲端儲存或衝突訊息。
+      }
+    };
     $("day").onchange = () => {
       preview = null;
       $("commit").disabled = true;
@@ -3078,7 +3093,7 @@
           const v = prompt("請輸入解鎖密碼");
           if (v === null) return;
           if (v !== UNLOCK_PIN) return alert("密碼不正確");
-        } else if (!confirm("解鎖後可刪除紀錄並還原資料，確定要解鎖嗎？")) return;
+        } else if (!confirm("解鎖後可查看或逐條刪除操作紀錄。確定要解鎖嗎？")) return;
         panel.classList.remove("locked");
       };
       document.getElementById("relockLogs").onclick = lock;
